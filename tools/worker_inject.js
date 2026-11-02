@@ -100,6 +100,7 @@ function __ctlRun(m){
   return{frames:h.frames,fin:h.hasFinished,cp:__cp(last),pos:__pos(last),speed:new DataView(last).getFloat32(7,!0),overrides:over,bits:out.slice(0,h.frames)};
 }
 function __custom(m){
+  if(m.op==='parts'){const T=Ko.fromSaveString(m.trackData),out=[];T.forEachPart((x,y,z,id,rot,ax,col,cpo,so)=>{let nm=null;try{const a=Ao(id);nm=a.name||a.id}catch(e){}out.push([x,y,z,id,nm,rot,ax,col,cpo,so])});postMessage({op:'res',id:m.id,parts:out});return}
   if(m.op==='ctlSetup'){__C.P=m.P;__C.bits=m.bits;__C.N=m.N;postMessage({op:'res',id:m.id,ok:true});return}
   if(m.op==='ctlRun'){const r=__ctlRun(m);r.op='res';r.id=m.id;postMessage(r);return}
   if(m.op&&m.op[0]==='b'&&m.op!=='bad'){const r=__beam(m);if(r){r.op='res';r.id=m.id;postMessage(r);return}}

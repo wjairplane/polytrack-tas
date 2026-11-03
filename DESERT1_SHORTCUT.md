@@ -1,6 +1,6 @@
 # Desert 1 shortcut
 
-**Status: reproduced.** `inputs/tracks/desert1_opt.json` finishes in **21.926 s** (3/3 checkpoints) in the offline simulator
+**Status: reproduced.** `inputs/tracks/desert1_opt.json` finishes in **21.209 s** (3/3 checkpoints) in the offline simulator
 and in the real game (headless Chromium). The video (NeoRacer, "How a TAS Completely Broke One of Polytrack's Most Famous Maps
 (Desert 1)") shows the idea; its run also has a start-of-race trick (about 0.4 s), so its finish (about 20.2 s) is not reachable
 with only the shortcut applied to our line yet.
@@ -30,5 +30,7 @@ World coordinates (sim units). Last checkpoint at frame 17395, about (-58, 40, -
 
 ## Still to gain
 
-The car loses about a second on the roof (it arrives at ~80 km/h and wanders); the video reaches the finish about 0.2 s after
-getting onto the roof.
+The first version finished in 21.926 s; a finish-time hill climb from 18.4 s on (no wandering on the roof any more) brought it
+to 21.209 s. The car still carries ~120 km/h out of the pillar gap, where the video has ~157 km/h: the contact with the brace
+beam costs about 40 km/h, and the outcome there is so sensitive (sub-millisecond) that small-step searches from 16.8 s on found nothing
+better. A different contact (landing on the brace beam as in the video frames at 7.5-7.6 s) is what is missing.

@@ -92,7 +92,7 @@ const bitsToLists = bits => { const L = { up: [], right: [], down: [], left: [],
       const c = seen.get(key); if (!c || nd.score > c.score) seen.set(key, nd);
     }
     const sortedK = [...seen.values()].sort((a, b) => b.score - a.score);
-    if (process.env.MODE === 'path') {
+    if (process.env.DIVERSE !== '0') {
       const picked = new Set(), seenC = new Set();
       for (const nd of sortedK) { if (picked.size >= Math.floor(K / 2)) break; const c = nd.pos.map(v => Math.round(v / 1.2)).join(',') + '|' + Math.round(nd.speed / 25); if (!seenC.has(c)) { seenC.add(c); picked.add(nd); } }
       for (const nd of sortedK) { if (picked.size >= K) break; picked.add(nd); }

@@ -48,7 +48,7 @@ function __beam(m){
         for(const sg of j.segs){const b=sg[0];ctl.up=!!(b&1);ctl.right=!!(b&2);ctl.down=!!(b&4);ctl.left=!!(b&8);
           for(let k=0;k<sg[1]&&!h.hasFinished;k++){last=n(h,ctl);h.hasFinished=Xo(new Uint8Array(last));h.frames++}}
         __B.states.set(j.cid,{snap:__snapD(),frames:h.frames,fin:h.hasFinished});
-        out.push({cid:j.cid,frames:h.frames,fin:h.hasFinished,pos:__pos(last),speed:new DataView(last).getFloat32(7,!0),cp:__cp(last)});
+        out.push({cid:j.cid,frames:h.frames,fin:h.hasFinished,pos:__pos(last),quat:__quat(last),speed:new DataView(last).getFloat32(7,!0),cp:__cp(last)});
       }catch(e){ // usually a page outside D written by an earlier job of this step; the caller leak-checks and re-runs
         if(sp!==null)self.__wx.u(sp);
         out.push({cid:j.cid,err:String(e&&e.message||e).slice(0,120)});

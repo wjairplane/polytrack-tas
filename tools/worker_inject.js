@@ -7,7 +7,7 @@ function __quat(b){const u=new Uint8Array(b),v=new DataView(b),o=((u[11]&2)?17:1
 function __cp(b){const u=new Uint8Array(b);return new DataView(b).getUint16((u[11]&2)?15:12,!0)}
 function __go(L,h,cap,record,sample,cpStop){
   const idx={},ctl={};let last=null;
-  const S=sample?[]:null;
+  const S=sample?[]:null,SQ=(sample&&__S.wantQ)?[]:null;
   const P=record?new Float32Array(3*(cap+1)):null,V=record?new Float32Array(cap+1):null,C=record?new Uint16Array(cap+1):null;
   for(const k of __KEYS)idx[k]=0;
   const sp=self.__wx&&typeof self.__wx.w==="function"?self.__wx.w():null;let crashed=null;
@@ -17,7 +17,7 @@ function __go(L,h,cap,record,sample,cpStop){
     for(const k of __KEYS){const a=L[k];let i=idx[k];while(i<a.length&&a[i]<=f)i++;idx[k]=i;ctl[k]=(i&1)==1}
     const b=n(h,ctl);h.hasFinished=Xo(new Uint8Array(b));h.frames++;last=b;
     if(cpStop&&__cp(b)>=cpStop)break;
-    if(sample&&h.frames%sample==0)S.push(h.frames,...__pos(b));
+    if(sample&&h.frames%sample==0){S.push(h.frames,...__pos(b));if(SQ)SQ.push(...__quat(b))}
     if(record){const p=__pos(b);P.set(p,3*h.frames);V[h.frames]=new DataView(b).getFloat32(7,!0);C[h.frames]=__cp(b);
       if((h.frames%__S.K==0||(__S.K2&&h.frames>=__S.K2from&&h.frames%__S.K2==0))&&!h.hasFinished)__S.snaps.set(h.frames,new Uint8Array(t.HEAPU8));}
   }
@@ -27,6 +27,7 @@ function __go(L,h,cap,record,sample,cpStop){
     if(sample)r.S=S;if(record){r.P=P.subarray(0,3*(h.frames+1));r.V=V.subarray(0,h.frames+1);r.C=C.subarray(0,h.frames+1)}return r}
   const r={op:"res",frames:h.frames,fin:h.hasFinished,last:new Uint8Array(last),pos:__pos(last),speed:new DataView(last).getFloat32(7,!0),cp:__cp(last)};
   if(sample)r.S=S;
+  if(SQ)r.SQ=SQ;
   if(record){r.P=P.subarray(0,3*(h.frames+1));r.V=V.subarray(0,h.frames+1);r.C=C.subarray(0,h.frames+1)}
   return r;
 }
@@ -47,7 +48,7 @@ function __beam(m){
         for(const sg of j.segs){const b=sg[0];ctl.up=!!(b&1);ctl.right=!!(b&2);ctl.down=!!(b&4);ctl.left=!!(b&8);
           for(let k=0;k<sg[1]&&!h.hasFinished;k++){last=n(h,ctl);h.hasFinished=Xo(new Uint8Array(last));h.frames++}}
         __B.states.set(j.cid,{snap:__snapD(),frames:h.frames,fin:h.hasFinished});
-        out.push({cid:j.cid,frames:h.frames,fin:h.hasFinished,pos:__pos(last),speed:new DataView(last).getFloat32(7,!0),cp:__cp(last)});
+        out.push({cid:j.cid,frames:h.frames,fin:h.hasFinished,pos:__pos(last),quat:__quat(last),speed:new DataView(last).getFloat32(7,!0),cp:__cp(last)});
       }catch(e){ // usually a page outside D written by an earlier job of this step; the caller leak-checks and re-runs
         if(sp!==null)self.__wx.u(sp);
         out.push({cid:j.cid,err:String(e&&e.message||e).slice(0,120)});
@@ -100,6 +101,8 @@ function __ctlRun(m){
   return{frames:h.frames,fin:h.hasFinished,cp:__cp(last),pos:__pos(last),speed:new DataView(last).getFloat32(7,!0),overrides:over,bits:out.slice(0,h.frames)};
 }
 function __custom(m){
+  if(m.op==='wantQ'){__S.wantQ=!!m.on;postMessage({op:'res',id:m.id,ok:true});return}
+  if(m.op==='parts'){const T=Ko.fromSaveString(m.trackData),out=[];T.forEachPart((x,y,z,id,rot,ax,col,cpo,so)=>{let nm=null;try{const a=Ao(id);nm=a.name||a.id}catch(e){}out.push([x,y,z,id,nm,rot,ax,col,cpo,so])});postMessage({op:'res',id:m.id,parts:out});return}
   if(m.op==='ctlSetup'){__C.P=m.P;__C.bits=m.bits;__C.N=m.N;postMessage({op:'res',id:m.id,ok:true});return}
   if(m.op==='ctlRun'){const r=__ctlRun(m);r.op='res';r.id=m.id;postMessage(r);return}
   if(m.op&&m.op[0]==='b'&&m.op!=='bad'){const r=__beam(m);if(r){r.op='res';r.id=m.id;postMessage(r);return}}

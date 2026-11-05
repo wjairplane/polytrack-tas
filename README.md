@@ -21,7 +21,7 @@ All three are verified in the real game (headless Chromium, 3/3 checkpoints).
 | Summer 1 | 22.114 | 22.064 | 50 ms |
 | Summer 2 | 15.178 | 15.176 | 2 ms |
 | Summer 3 | 20.276 | 20.263 | 13 ms |
-| Summer 4 | 34.105 | 34.102 | 3 ms |
+| Summer 4 | 34.105 | 34.102 | 4 ms |
 | Summer 5 | 49.815 | 49.789 | 26 ms |
 | Summer 6 | 37.036 | 37.035 | 1 ms |
 | Winter 1 | 16.959 | 16.959 | tie (different line, so not a duplicate) |
@@ -29,7 +29,7 @@ All three are verified in the real game (headless Chromium, 3/3 checkpoints).
 | Winter 3 | 34.485 | 34.476 | 9 ms |
 | Winter 4 | 19.311 | 19.310 | 1 ms |
 | Winter 5 | 18.425 | 18.424 | 1 ms |
-| Desert 1 | 20.626 (TzTech, shortcut) | **20.623** (shortcut, see below) | 3 ms |
+| Desert 1 | 20.626 (TzTech, shortcut) | **20.622** (shortcut, see below) | 4 ms |
 | Desert 2 | 28.271 | 28.256 | 15 ms |
 | Desert 3 | 20.172 | 20.166 | 6 ms |
 | Desert 4 | 21.750 | 21.717 | 33 ms |
@@ -45,7 +45,7 @@ Rebuild the menu script with `node tools/build_menu_userscript.js`.
 
 `desert1_opt.json` (and `desert1.user.js`, the Desert 1 entry of `all-tracks.user.js`) is the **shortcut run**: after the
 last checkpoint the car leaves the road, barrel-rolls through the gap between two pillars under the big red structure, is thrown
-up onto it and finishes from the top. Verified in the real game (headless): **20.623 s, 3/3 checkpoints**.
+up onto it and finishes from the top. Verified in the real game (headless): **20.622 s, 3/3 checkpoints**.
 It is TzTech's leaderboard #1 run (20.626 s, 2026-11-05, `inputs/tracks/desert1_tztech.json`) with the finish re-optimized by
 `tools/finclimb.js`. Same route as NeoRacer's video "How a TAS Completely Broke One of Polytrack's Most Famous Maps (Desert 1)".
 Our own shortcut run (21.209 s) is kept as `desert1_opt_21209.json`, and the route without the shortcut (25.243 s) as

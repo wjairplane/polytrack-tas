@@ -1,8 +1,8 @@
 # Desert 1 shortcut
 
-**Status: 20.623 s.** `inputs/tracks/desert1_opt.json` finishes in **20.623 s** (3/3 checkpoints) in the offline simulator
+**Status: 20.622 s.** `inputs/tracks/desert1_opt.json` finishes in **20.622 s** (3/3 checkpoints) in the offline simulator
 and in the real game (headless Chromium). It is TzTech's leaderboard #1 run (20.626 s, submitted 2026-11-05, kept as
-`inputs/tracks/desert1_tztech.json`) with the last ~1.4 s re-optimized by `tools/finclimb.js` (3 ms faster). That run has the
+`inputs/tracks/desert1_tztech.json`) with the last ~1.4 s re-optimized by `tools/finclimb.js` (4 ms faster). That run has the
 video's start trick (about 0.6 s ahead by 14 s) and a clean pillar boost that carries the car onto the finish road.
 
 Our own shortcut run, found from scratch as described below, finishes in 21.209 s (`inputs/tracks/desert1_opt_21209.json`).

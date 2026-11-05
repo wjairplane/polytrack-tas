@@ -1,9 +1,14 @@
 # Desert 1 shortcut
 
-**Status: reproduced.** `inputs/tracks/desert1_opt.json` finishes in **21.209 s** (3/3 checkpoints) in the offline simulator
-and in the real game (headless Chromium). The video (NeoRacer, "How a TAS Completely Broke One of Polytrack's Most Famous Maps
-(Desert 1)") shows the idea; its run also has a start-of-race trick (about 0.4 s), so its finish (about 20.2 s) is not reachable
-with only the shortcut applied to our line yet.
+**Status: 20.623 s.** `inputs/tracks/desert1_opt.json` finishes in **20.623 s** (3/3 checkpoints) in the offline simulator
+and in the real game (headless Chromium). It is TzTech's leaderboard #1 run (20.626 s, submitted 2026-11-05, kept as
+`inputs/tracks/desert1_tztech.json`) with the last ~1.4 s re-optimized by `tools/finclimb.js` (3 ms faster). That run has the
+video's start trick (about 0.6 s ahead by 14 s) and a clean pillar boost that carries the car onto the finish road.
+
+Our own shortcut run, found from scratch as described below, finishes in 21.209 s (`inputs/tracks/desert1_opt_21209.json`).
+Its pillar throw is about 2 m/s short of upward speed, because its approach is ~6 km/h slower than the video's; injecting the
+video's state reproduces the video's throw only at almost exactly its speed. The video (NeoRacer, "How a TAS Completely Broke
+One of Polytrack's Most Famous Maps (Desert 1)") finishes in 19.971 s.
 
 ## The route
 

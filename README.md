@@ -29,7 +29,7 @@ All three are verified in the real game (headless Chromium, 3/3 checkpoints).
 | Winter 3 | 34.485 | 34.476 | 9 ms |
 | Winter 4 | 19.311 | 19.310 | 1 ms |
 | Winter 5 | 18.425 | 18.424 | 1 ms |
-| Desert 1 | 25.245 | **21.209** (shortcut, see below) | 4036 ms |
+| Desert 1 | 20.626 (TzTech, shortcut) | **20.623** (shortcut, see below) | 3 ms |
 | Desert 2 | 28.271 | 28.256 | 15 ms |
 | Desert 3 | 20.172 | 20.166 | 6 ms |
 | Desert 4 | 21.750 | 21.717 | 33 ms |
@@ -43,11 +43,13 @@ Rebuild the menu script with `node tools/build_menu_userscript.js`.
 
 ## Desert 1 shortcut
 
-`desert1_opt.json` (and `desert1.user.js`, the Desert 1 entry of `all-tracks.user.js`) is now the **shortcut run**: after the
+`desert1_opt.json` (and `desert1.user.js`, the Desert 1 entry of `all-tracks.user.js`) is the **shortcut run**: after the
 last checkpoint the car leaves the road, barrel-rolls through the gap between two pillars under the big red structure, is thrown
-up onto it and finishes from the top. Verified in the real game (headless): **21.209 s, 3/3 checkpoints**.
-The same route as in NeoRacer's video "How a TAS Completely Broke One of Polytrack's Most Famous Maps (Desert 1)". The older
-route without the shortcut (25.243 s) is kept as `inputs/tracks/desert1_opt_standard.json`. How it was found: `DESERT1_SHORTCUT.md`.
+up onto it and finishes from the top. Verified in the real game (headless): **20.623 s, 3/3 checkpoints**.
+It is TzTech's leaderboard #1 run (20.626 s, 2026-11-05, `inputs/tracks/desert1_tztech.json`) with the finish re-optimized by
+`tools/finclimb.js`. Same route as NeoRacer's video "How a TAS Completely Broke One of Polytrack's Most Famous Maps (Desert 1)".
+Our own shortcut run (21.209 s) is kept as `desert1_opt_21209.json`, and the route without the shortcut (25.243 s) as
+`desert1_opt_standard.json`. Details: `DESERT1_SHORTCUT.md`.
 
 ## Playing a run
 

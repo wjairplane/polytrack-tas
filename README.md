@@ -43,7 +43,11 @@ rest. Install only one TAS script at a time (turn the others off), or they get i
 - The script applies the inputs on exact 1 ms physics frames by patching the game's physics worker
   (synthetic key presses can't be timed that precisely). That's why it can't be pasted into the
   console of an open page.
-- It does not block leaderboard submission: a finished run is submitted as usual when you're online.
+- **TAS runs are never submitted to the leaderboard.** Every script blocks the game's leaderboard upload, so a
+  finished TAS run fails to upload as if you were offline ("Failed to connect to server"). Viewing
+  leaderboards still works. The single-track scripts block it all the time. The menu script blocks it once a
+  track has been picked on the page (or was remembered from your last visit) until you reload the page
+  with **TAS off**. To submit your own runs, pick TAS off and reload, or turn the script off.
 - If the game updates past 0.6.3, the script logs `patch anchor not found` in the console and does
   nothing, so the game plays normally.
 - **Headless check:** `npm i playwright && node tools/run_headless.js [userscript] [screenshot] [track]`

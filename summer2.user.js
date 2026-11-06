@@ -11,6 +11,28 @@
 (() => {
   const SCHED = [[0,"up",true],[1504,"left",true],[1530,"left",false],[1618,"left",true],[1642,"left",false],[1731,"left",true],[1749,"left",false],[1821,"left",true],[1832,"left",false],[1917,"left",true],[1943,"left",false],[2001,"left",true],[2041,"left",false],[2126,"left",true],[2154,"left",false],[2969,"left",true],[2999,"left",false],[3066,"left",true],[3111,"left",false],[3165,"left",true],[3195,"left",false],[3366,"left",true],[3395,"left",false],[3882,"right",true],[3920,"right",false],[4053,"right",true],[4086,"right",false],[4489,"right",true],[4540,"right",false],[4589,"right",true],[4641,"right",false],[4739,"right",true],[4783,"right",false],[4877,"right",true],[4913,"right",false],[5030,"right",true],[5077,"right",false],[5136,"right",true],[5155,"right",false],[5797,"right",true],[5809,"right",false],[5889,"right",true],[5946,"right",false],[5998,"right",true],[6040,"right",false],[6166,"right",true],[6892,"up",false],[6899,"down",true],[6948,"down",false],[6999,"up",true],[7226,"right",false],[7242,"right",true],[8181,"down",true],[9591,"down",false],[10072,"up",false],[10100,"down",true],[10183,"down",false],[10220,"up",true],[11064,"right",false],[11098,"right",true],[11151,"right",false],[11184,"right",true],[11243,"right",false],[11266,"right",true],[12336,"up",false],[12359,"down",true],[12414,"down",false],[12433,"left",true],[12442,"left",false],[12446,"right",false],[12447,"right",true],[12463,"up",true],[12518,"right",false],[12523,"right",true],[12551,"right",false],[12556,"right",true],[12559,"right",false],[12560,"right",true],[12563,"right",false],[12566,"right",true],[12582,"right",false],[12585,"right",true],[12592,"right",false],[12597,"right",true],[12600,"up",false],[12616,"up",true],[13107,"right",false],[13109,"right",true],[13188,"right",false],[13192,"right",true],[13378,"right",false],[13382,"right",true],[13384,"right",false],[13385,"left",true],[13388,"left",false],[13390,"right",true],[13391,"right",false],[13404,"right",true],[13438,"right",false],[13447,"right",true],[13541,"right",false],[13553,"right",true],[13666,"right",false],[13667,"right",true],[13807,"right",false],[13835,"right",true],[13885,"left",true],[13888,"right",false],[13901,"left",false],[13908,"right",true],[13933,"right",false],[13950,"right",true],[13954,"right",false],[13965,"right",true],[14000,"right",false],[14030,"right",true],[14085,"right",false],[14088,"left",true],[14106,"left",false],[14114,"right",true],[14168,"right",false],[14178,"left",true],[14189,"left",false],[14211,"right",true],[14249,"right",false],[14266,"left",true],[14268,"left",false],[14282,"right",true],[14313,"right",false],[14354,"right",true],[14394,"right",false],[14493,"right",true],[14598,"right",false],[14626,"right",true],[14632,"right",false],[14655,"right",true],[14673,"right",false],[14712,"right",true],[14722,"right",false],[14744,"right",true],[14765,"right",false],[14851,"right",true],[14866,"right",false],[14905,"right",true],[14925,"right",false],[15008,"right",true],[15023,"right",false],[15035,"right",true],[15051,"right",false],[15133,"right",true],[15139,"right",false]];
   const ANCHOR = "for(;t.userControls.buffer.length>0&&t.userControls.buffer[0].frame<=t.frames;){";
+  const blockSubmit = () => true;
+  // Never submit TAS runs to the online leaderboard: a POST to vps.kodub.com/.../leaderboard fails
+  // as if offline (the game shows "Failed to connect to server"). Downloading leaderboards still works.
+  const isSubmit = (m, u) => /^post$/i.test(m || "") && /^https:\/\/vps\.kodub\.com\/(.*\/)?leaderboard(\?|$)/.test(String(u));
+  const XO = XMLHttpRequest.prototype.open, XS = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function (m, u, ...r) { this.__tasSubmit = isSubmit(m, u); return XO.call(this, m, u, ...r); };
+  XMLHttpRequest.prototype.send = function (body) {
+    if (!this.__tasSubmit || !blockSubmit()) return XS.call(this, body);
+    console.log("[TAS] leaderboard submission blocked");
+    const x = this;
+    Object.defineProperty(x, "readyState", { value: 4 }); Object.defineProperty(x, "status", { value: 0 });
+    setTimeout(() => { const ev = new Event("readystatechange"); if (x.onreadystatechange) x.onreadystatechange.call(x, ev);
+      x.dispatchEvent(new Event("error")); x.dispatchEvent(new Event("loadend")); }, 0);
+  };
+  const realFetch = window.fetch;
+  window.fetch = function (input, init) {
+    const u = typeof input === "string" || input instanceof URL ? input : input && input.url;
+    const m = (init && init.method) || (input && input.method) || "GET";
+    if (isSubmit(m, u) && blockSubmit()) { console.log("[TAS] leaderboard submission blocked"); return Promise.reject(new TypeError("Failed to fetch")); }
+    return realFetch.apply(this, arguments);
+  };
+
   const RealWorker = window.Worker;
   window.Worker = function (url, opts) {
     const u = new URL(url, location.href);

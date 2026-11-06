@@ -60,32 +60,31 @@ rest. Install only one TAS script at a time (turn the others off), or they get i
 2 ms or less, and under about 15 key changes per second. Runs with hundreds of 1–2 ms presses were left out as
 tool-assisted.
 
-| Track | Best human run | TAS | Source of the TAS |
-|---|---|---|---|
-| Summer 1 | 22.123 (Monstrosity) | 22.010 | JerrtHu |
-| Summer 2 | 15.178 (SpeedySebas) | 15.152 | JerrtHu |
-| Summer 3 | 20.276 (SpeedySebas) | 20.152 | JerrtHu |
-| Summer 4 | 34.105 (youngfella) | 33.992 | JerrtHu |
-| Summer 5 | 49.815 (Wak3son) | 49.577 | JerrtHu |
-| Summer 6 | 36.992 (Monstrosity) | 36.920 | JerrtHu |
-| Summer 7 | 31.142 (SpeedySebas) | 31.029 | JerrtHu |
-| Winter 1 | 16.999 (Monstrosity) | 16.959 | ours (JerrtHu ties it) |
-| Winter 2 | 26.830 (yf savestate) | 26.669 | JerrtHu |
-| Winter 3 | 34.389 (SpeedySebas) | 34.219 | JerrtHu |
-| Winter 4 | 19.311 (SpeedySebas) | 19.246 | JerrtHu |
-| Winter 5 | 18.323 (SpeedySebas) | 18.148 | JerrtHu |
-| Desert 1 | 25.161 (Monstrosity, no shortcut) | 20.622 (shortcut) | TzTech's run, finish re-optimized by us |
-| Desert 2 | 28.271 (cheesebob (81)) | 28.062 | JerrtHu |
-| Desert 3 | 20.302 (The Kroger) | 20.150 | JerrtHu |
-| Desert 4 | 21.750 (Monstrosity) | 21.640 | JerrtHu |
-| Desert 5 | 29.027 (Monstrosity) | 28.911 | JerrtHu |
+| Track | Best human run | TAS |
+|---|---|---|
+| Summer 1 | 22.123 (Monstrosity) | 22.010 |
+| Summer 2 | 15.178 (SpeedySebas) | 15.152 |
+| Summer 3 | 20.276 (SpeedySebas) | 20.152 |
+| Summer 4 | 34.105 (youngfella) | 33.992 |
+| Summer 5 | 49.815 (Wak3son) | 49.577 |
+| Summer 6 | 36.992 (Monstrosity) | 36.920 |
+| Summer 7 | 31.142 (SpeedySebas) | 31.029 |
+| Winter 1 | 16.999 (Monstrosity) | 16.959 |
+| Winter 2 | 26.830 (yf savestate) | 26.669 |
+| Winter 3 | 34.389 (SpeedySebas) | 34.219 |
+| Winter 4 | 19.311 (SpeedySebas) | 19.246 |
+| Winter 5 | 18.323 (SpeedySebas) | 18.148 |
+| Desert 1 | 25.161 (Monstrosity, no shortcut) | 20.622 (shortcut) |
+| Desert 2 | 28.271 (cheesebob (81)) | 28.062 |
+| Desert 3 | 20.302 (The Kroger) | 20.150 |
+| Desert 4 | 21.750 (Monstrosity) | 21.640 |
+| Desert 5 | 29.027 (Monstrosity) | 28.911 |
 
-"JerrtHu" means JerrtHu's leaderboard run from 2026-11-06, used as is (`inputs/tracks/<track>_jerrthu.json`; several of
-those runs have since been taken off the leaderboard). They are faster than our own runs, which are kept as
-`inputs/tracks/<track>_ours.json` (Summer 1: `inputs/summer1_ours.json`): Summer 1 22.064, Summer 2 15.176, Summer 3 20.263,
-Summer 4 34.102, Summer 5 49.789, Summer 6 37.035, Summer 7 31.141, Winter 2 26.829, Winter 3 34.347, Winter 4 19.310, Winter 5 18.321,
-Desert 2 28.256, Desert 3 20.166, Desert 4 21.717, Desert 5 29.018. Each of ours started from a human #1 replay of its
-time (`<track>_wr.json` or `<track>_human.json`).
+On most tracks the TAS inputs are faster leaderboard runs from 2026-11-06 (several have since been taken off the
+leaderboard). Our own runs are kept as `inputs/tracks/<track>_ours.json` (Summer 1: `inputs/summer1_ours.json`): Summer 1 22.064,
+Summer 2 15.176, Summer 3 20.263, Summer 4 34.102, Summer 5 49.789, Summer 6 37.035, Summer 7 31.141, Winter 2 26.829,
+Winter 3 34.347, Winter 4 19.310, Winter 5 18.321, Desert 2 28.256, Desert 3 20.166, Desert 4 21.717, Desert 5 29.018. Each
+started from a human replay of its time (`<track>_wr.json` or `<track>_human.json`). Winter 1 and Desert 1 use our runs.
 
 Inputs used by the scripts are in `inputs/tracks/<track>_opt.json` (Summer 1: `inputs/summer1_opt.json`).
 Pipeline for a track: `node tools/capture_tracks.js` (track data + id, once), `python3 tools/fetch_replay.py 1
@@ -98,8 +97,7 @@ Rebuild the menu script with `node tools/build_menu_userscript.js` (it needs eve
 `desert1_opt.json` (and `desert1.user.js`, the Desert 1 entry of `all-tracks.user.js`) is the **shortcut run**: after the
 last checkpoint the car leaves the road, barrel-rolls through the gap between two pillars under the big red structure, is thrown
 up onto it and finishes from the top. Verified in the real game (headless): **20.622 s, 3/3 checkpoints**.
-It is TzTech's leaderboard #1 run (20.626 s, 2026-11-05, `inputs/tracks/desert1_tztech.json`) with the finish re-optimized by
-`tools/finclimb.js`. Same route as NeoRacer's video "How a TAS Completely Broke One of Polytrack's Most Famous Maps (Desert 1)".
+It is a 20.626 s shortcut run (`inputs/tracks/desert1_base.json`) with the finish re-optimized by `tools/finclimb.js`. Same route as NeoRacer's video "How a TAS Completely Broke One of Polytrack's Most Famous Maps (Desert 1)".
 Our own shortcut run (21.209 s) is kept as `desert1_opt_21209.json`, and the route without the shortcut (25.243 s) as
 `desert1_opt_standard.json`. Details: `DESERT1_SHORTCUT.md`.
 

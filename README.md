@@ -1,14 +1,7 @@
 # PolyTrack TAS
 
-Tool-assisted runs of the official tracks of [PolyTrack](https://www.kodub.com/apps/polytrack) (game version 0.6.3): Summer 1–6, Winter 1–5 and Desert 1–5. Summer 1 first:
-
-| Run | Time | Files |
-|---|---|---|
-| Optimized TAS | **22.064 s** | `summer1.user.js`, `inputs/summer1_opt.json` |
-| Previous best | 22.067 s | `inputs/summer1_opt_22067.json` |
-| Human #1 replay (leaderboard entry 59995962) | 22.114 s | `summer1-replay.user.js`, `inputs/summer1.json` |
-
-All three are verified in the real game (headless Chromium, 3/3 checkpoints).
+Tool-assisted runs of all 17 official tracks of [PolyTrack](https://www.kodub.com/apps/polytrack) (game version 0.6.3):
+Summer 1–7, Winter 1–5 and Desert 1–5, played in the real game by a userscript. Leaderboard uploads are blocked.
 
 ## How to use
 
@@ -61,32 +54,44 @@ rest. Install only one TAS script at a time (turn the others off), or they get i
 
 `all-tracks.user.js` holds every track below. A small menu at the top right picks the track and
 **Start** opens it, presses Play and starts the run. Each track also has its own `<track>.user.js`
-(start the race with W). All times below are verified in the real game.
+(start the race with W). All TAS times below are verified in the real game (headless Chromium, every checkpoint).
 
-| Track | #1 replay | TAS | Gain |
+"Best human run" is the fastest leaderboard run on 2026-11-06 whose inputs look human: no presses or gaps of
+2 ms or less, and under about 15 key changes per second. Runs with hundreds of 1–2 ms presses were left out as
+tool-assisted.
+
+| Track | Best human run | TAS | Source of the TAS |
 |---|---|---|---|
-| Summer 1 | 22.114 | 22.064 | 50 ms |
-| Summer 2 | 15.178 | 15.176 | 2 ms |
-| Summer 3 | 20.276 | 20.263 | 13 ms |
-| Summer 4 | 34.105 | 34.102 | 4 ms |
-| Summer 5 | 49.815 | 49.789 | 26 ms |
-| Summer 6 | 37.036 | 37.035 | 1 ms |
-| Winter 1 | 16.959 | 16.959 | tie (different line, so not a duplicate) |
-| Winter 2 | 26.830 | 26.829 | 1 ms |
-| Winter 3 | 34.485 | 34.476 | 9 ms |
-| Winter 4 | 19.311 | 19.310 | 1 ms |
-| Winter 5 | 18.425 | 18.424 | 1 ms |
-| Desert 1 | 20.626 (TzTech, shortcut) | **20.622** (shortcut, see below) | 4 ms |
-| Desert 2 | 28.271 | 28.256 | 15 ms |
-| Desert 3 | 20.172 | 20.166 | 6 ms |
-| Desert 4 | 21.750 | 21.717 | 33 ms |
-| Desert 5 | 29.027 | 29.018 | 9 ms |
+| Summer 1 | 22.123 (Monstrosity) | 22.010 | JerrtHu |
+| Summer 2 | 15.178 (SpeedySebas) | 15.152 | JerrtHu |
+| Summer 3 | 20.276 (SpeedySebas) | 20.152 | JerrtHu |
+| Summer 4 | 34.105 (youngfella) | 33.992 | JerrtHu |
+| Summer 5 | 49.815 (Wak3son) | 49.577 | JerrtHu |
+| Summer 6 | 36.992 (Monstrosity) | 36.920 | JerrtHu |
+| Summer 7 | 31.142 (SpeedySebas) | 31.029 | JerrtHu |
+| Winter 1 | 16.999 (Monstrosity) | 16.959 | ours (JerrtHu ties it) |
+| Winter 2 | 26.830 (yf savestate) | 26.669 | JerrtHu |
+| Winter 3 | 34.389 (SpeedySebas) | 34.219 | JerrtHu |
+| Winter 4 | 19.311 (SpeedySebas) | 19.246 | JerrtHu |
+| Winter 5 | 18.323 (SpeedySebas) | 18.148 | JerrtHu |
+| Desert 1 | 25.161 (Monstrosity, no shortcut) | 20.622 (shortcut) | TzTech's run, finish re-optimized by us |
+| Desert 2 | 28.271 (cheesebob (81)) | 28.062 | JerrtHu |
+| Desert 3 | 20.302 (The Kroger) | 20.150 | JerrtHu |
+| Desert 4 | 21.750 (Monstrosity) | 21.640 | JerrtHu |
+| Desert 5 | 29.027 (Monstrosity) | 28.911 | JerrtHu |
 
-Inputs are in `inputs/tracks/<track>_wr.json` (#1 replay) and `<track>_opt.json` (TAS).
+"JerrtHu" means JerrtHu's leaderboard run from 2026-11-06, used as is (`inputs/tracks/<track>_jerrthu.json`; several of
+those runs have since been taken off the leaderboard). They are faster than our own runs, which are kept as
+`inputs/tracks/<track>_ours.json` (Summer 1: `inputs/summer1_ours.json`): Summer 1 22.064, Summer 2 15.176, Summer 3 20.263,
+Summer 4 34.102, Summer 5 49.789, Summer 7 31.141, Winter 2 26.829, Winter 3 34.347, Winter 4 19.310, Winter 5 18.321,
+Desert 2 28.256, Desert 3 20.166, Desert 4 21.717, Desert 5 29.018. Each of ours started from a human #1 replay of its
+time (`<track>_wr.json` or `<track>_human.json`).
+
+Inputs used by the scripts are in `inputs/tracks/<track>_opt.json` (Summer 1: `inputs/summer1_opt.json`).
 Pipeline for a track: `node tools/capture_tracks.js` (track data + id, once), `python3 tools/fetch_replay.py 1
 inputs/tracks/<track>_wr.json <trackId>`, then `TRACK=<track> SIDE=none node tools/finclimb.js ...` (finish
 search on the last seconds) and, where that stalls, `TRACK=<track> tools/beam.js` with `BSTART`.
-Rebuild the menu script with `node tools/build_menu_userscript.js`.
+Rebuild the menu script with `node tools/build_menu_userscript.js` (it needs every track captured in `sim_assets/tracks/`).
 
 ## Desert 1 shortcut
 
@@ -126,7 +131,7 @@ tools/fetch_sim_assets.sh      # -> sim_assets/ (not committed)
 | `tools/longrun.sh` | Endless finclimb slots that restart from, and promote gains to, a shared best run. |
 | `tools/fetch_replay.py` | Downloads a leaderboard recording and converts it to an input file. |
 
-## How the time came down
+## How our Summer 1 time came down (22.114 → 22.064)
 
 | Time | How |
 |---|---|
@@ -140,7 +145,7 @@ tools/fetch_sim_assets.sh      # -> sim_assets/ (not committed)
 
 All of the gain came after 10.7 s; the first 10.7 s are identical to the human run.
 
-## What we learned about the track
+## What we learned about Summer 1
 
 - **Physics:** Bullet raycast vehicle in wasm, deterministic, 1 ms steps. The car is
   acceleration-limited everywhere (no top speed in reach). Steering is a rate-limited servo,

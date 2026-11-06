@@ -83,7 +83,7 @@ tool-assisted.
 "JerrtHu" means JerrtHu's leaderboard run from 2026-11-06, used as is (`inputs/tracks/<track>_jerrthu.json`; several of
 those runs have since been taken off the leaderboard). They are faster than our own runs, which are kept as
 `inputs/tracks/<track>_ours.json` (Summer 1: `inputs/summer1_ours.json`): Summer 1 22.064, Summer 2 15.176, Summer 3 20.263,
-Summer 4 34.102, Summer 5 49.789, Summer 7 31.141, Winter 2 26.829, Winter 3 34.347, Winter 4 19.310, Winter 5 18.321,
+Summer 4 34.102, Summer 5 49.789, Summer 6 37.035, Summer 7 31.141, Winter 2 26.829, Winter 3 34.347, Winter 4 19.310, Winter 5 18.321,
 Desert 2 28.256, Desert 3 20.166, Desert 4 21.717, Desert 5 29.018. Each of ours started from a human #1 replay of its
 time (`<track>_wr.json` or `<track>_human.json`).
 

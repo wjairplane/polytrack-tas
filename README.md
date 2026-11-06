@@ -1,6 +1,6 @@
 # PolyTrack TAS
 
-Tool-assisted runs of **Summer 1** in [PolyTrack](https://www.kodub.com/apps/polytrack) (game version 0.6.3).
+Tool-assisted runs of the official tracks of [PolyTrack](https://www.kodub.com/apps/polytrack) (game version 0.6.3): Summer 1–6, Winter 1–5 and Desert 1–5. Summer 1 first:
 
 | Run | Time | Files |
 |---|---|---|

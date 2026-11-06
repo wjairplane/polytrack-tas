@@ -10,6 +10,48 @@ Tool-assisted runs of **Summer 1** in [PolyTrack](https://www.kodub.com/apps/pol
 
 All three are verified in the real game (headless Chromium, 3/3 checkpoints).
 
+## How to use
+
+You need a desktop browser (Chrome, Edge or Firefox) or Firefox for Android, and PolyTrack 0.6.3.
+
+1. **Install a userscript manager:** [Tampermonkey](https://www.tampermonkey.net/) or
+   [Violentmonkey](https://violentmonkey.github.io/). In Chrome and Edge, also turn on
+   **Allow user scripts** (or Developer mode) for the extension, or scripts won't run.
+2. **Install the script:** open
+   <https://raw.githubusercontent.com/wjairplane/summer1-tas/main/all-tracks.user.js>.
+   The manager shows an install page; click **Install**.
+3. **Open the game** at <https://app-polytrack.kodub.com/> (reload it if it was already open:
+   the script must load before the game does).
+4. **Pick a track:** a small dark menu appears at the top right. Choose the track in the list
+   (each entry shows the TAS time).
+5. Go to the **track list** (the official tracks screen) and click **Start** in the menu. The script
+   opens the track, presses Play and starts the race; the TAS drives the whole run. Don't touch
+   the keys while it plays.
+6. To play normally again, pick **TAS off** in the menu (or turn the script off in the manager).
+   The choice is remembered between visits.
+
+Menu messages: *go to the track list first* (open the track list, then click Start again),
+*press W to start* (the race didn't start by itself; press W once).
+
+**One track only:** each track also has its own script, e.g. `desert1.user.js` or `summer1.user.js`.
+It has no menu: install it, open that track yourself and press W once to start; the TAS drives the
+rest. Install only one TAS script at a time (turn the others off), or they get in each other's way.
+
+**Notes**
+
+- The script applies the inputs on exact 1 ms physics frames by patching the game's physics worker
+  (synthetic key presses can't be timed that precisely). That's why it can't be pasted into the
+  console of an open page.
+- It does not block leaderboard submission: a finished run is submitted as usual when you're online.
+- If the game updates past 0.6.3, the script logs `patch anchor not found` in the console and does
+  nothing, so the game plays normally.
+- **Headless check:** `npm i playwright && node tools/run_headless.js [userscript] [screenshot] [track]`
+  plays a run in headless Chromium and prints the final time and checkpoint count (leaderboard
+  submission is blocked there). Example: `node tools/run_headless.js all-tracks.user.js out.png desert1`.
+- Rebuild a single-track script from an input file:
+  `python3 tools/build_userscript.py inputs/summer1_opt.json summer1.user.js`; rebuild the menu
+  script with `node tools/build_menu_userscript.js`.
+
 ## All official tracks
 
 `all-tracks.user.js` holds every track below. A small menu at the top right picks the track and
@@ -50,24 +92,6 @@ It is TzTech's leaderboard #1 run (20.626 s, 2026-11-05, `inputs/tracks/desert1_
 `tools/finclimb.js`. Same route as NeoRacer's video "How a TAS Completely Broke One of Polytrack's Most Famous Maps (Desert 1)".
 Our own shortcut run (21.209 s) is kept as `desert1_opt_21209.json`, and the route without the shortcut (25.243 s) as
 `desert1_opt_standard.json`. Details: `DESERT1_SHORTCUT.md`.
-
-## Playing a run
-
-The userscripts patch PolyTrack's physics worker so the inputs are applied on exact 1 ms
-physics frames (synthetic key events can't be timed that precisely). They must run before
-the game loads, so they can't be pasted into the console of an open page.
-
-- **Browser:** install the `.user.js` file in Tampermonkey or Violentmonkey (desktop, or
-  Firefox for Android). It runs at document-start on `app-polytrack.kodub.com`. Open
-  Summer 1 and press W once to start; the TAS drives the rest.
-- **Headless:** `npm i playwright && node tools/run_headless.js [userscript] [screenshot]`
-  prints the final time and checkpoint count. Leaderboard submission is blocked there.
-- **Leaderboard:** the userscript itself does not block submission, so a finished run is
-  submitted as usual when you are online.
-- If the game updates past 0.6.3, the script warns `patch anchor not found` and does nothing.
-
-Rebuild a userscript from an input file:
-`python3 tools/build_userscript.py inputs/summer1_opt.json summer1.user.js`.
 
 ## Input format
 

@@ -64,7 +64,7 @@ tool-assisted.
 |---|---|---|
 | Summer 1 | 22.123 (Monstrosity) | 22.010 |
 | Summer 2 | 15.178 (SpeedySebas) | 15.152 |
-| Summer 3 | 20.276 (SpeedySebas) | 20.152 |
+| Summer 3 | 20.276 (SpeedySebas) | 20.150 |
 | Summer 4 | 34.105 (youngfella) | 33.992 |
 | Summer 5 | 49.815 (Wak3son) | 49.577 |
 | Summer 6 | 36.992 (Monstrosity) | 36.920 |

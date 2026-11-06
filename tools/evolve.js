@@ -121,7 +121,7 @@ function crossover(A, B) {                          // A before time t, B from t
 
   let ref = seed, P, V, finish, TF;
   async function rebase() {
-    const rs = await Promise.all(kids.map((c, i) => send(c, { op: 'setBase', L: ref, cap: 30000, wantRef: i === 0 })));
+    const rs = await Promise.all(kids.map((c, i) => send(c, { op: 'setBase', L: ref, cap: +(process.env.CAP || 30000), wantRef: i === 0 })));
     P = rs[0].P; V = rs[0].V; finish = rs[0].frames; TF = finish - FINISH_MARGIN;
   }
   function ahead(p, T) {

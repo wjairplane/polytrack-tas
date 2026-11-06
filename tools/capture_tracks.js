@@ -32,9 +32,10 @@ const slug = n => n.toLowerCase().replace(/\s+/g, '');
   const index = fs.existsSync(path.join(OUT, 'index.json')) ? JSON.parse(fs.readFileSync(path.join(OUT, 'index.json'))) : {};
   for (const name of NAMES) {
     // back to the track list (from a race: Exit; from a track panel: Back)
-    for (const t of ['Exit', 'Back']) { const x = p.getByText(t, { exact: true }); if (await x.count() && await x.first().isVisible()) { await x.first().click(); await p.waitForTimeout(1500); break; } }
-    lastTrackId = null;
-    const btn = p.locator('button').filter({ hasText: new RegExp('^\\s*' + name + '(\\s|No|$)') }).first();
+    for (const t of ['Exit', 'Back']) { const x = p.locator('button:visible').filter({ hasText: new RegExp('^\\s*' + t + '\\s*$') }); if (await x.count() && await x.first().isVisible()) { await x.first().click(); await p.waitForTimeout(1500); break; } }
+    lastTrackId = null; await p.waitForTimeout(1000);
+    if (process.env.DEBUG) console.log(JSON.stringify((await p.locator('button:visible').allInnerTexts()).map(s => s.replace(/\s+/g, ' ').trim())));
+    const btn = p.locator('button:visible').filter({ hasText: new RegExp('^\\s*' + name + '(\\s|No|$)') }).first();
     await btn.click(); await p.waitForTimeout(2500);
     const n0 = created.length;
     await p.locator('button:visible').filter({ hasText: /^\s*Play\s*$/ }).first().click(); await p.waitForTimeout(4000);

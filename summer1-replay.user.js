@@ -11,6 +11,28 @@
 (() => {
   const SCHED = [[0,"up",true],[562,"right",true],[597,"right",false],[754,"right",true],[793,"right",false],[882,"right",true],[962,"right",false],[1076,"right",true],[1119,"right",false],[1229,"right",true],[1300,"right",false],[1407,"right",true],[1470,"right",false],[1602,"right",true],[1648,"right",false],[1998,"right",true],[2093,"right",false],[2587,"left",true],[2706,"left",false],[2814,"left",true],[2860,"left",false],[2953,"left",true],[3079,"left",false],[3275,"left",true],[3372,"left",false],[3442,"right",true],[3940,"right",false],[4059,"left",true],[5213,"left",false],[5825,"right",true],[5921,"right",false],[5983,"right",true],[6062,"right",false],[6349,"left",true],[6409,"left",false],[6651,"right",true],[6751,"right",false],[6962,"right",true],[7040,"right",false],[7351,"right",true],[7454,"right",false],[7579,"right",true],[7670,"right",false],[7789,"left",true],[7883,"left",false],[7928,"left",true],[8021,"left",false],[8175,"left",true],[8276,"left",false],[8326,"left",true],[8838,"left",false],[8930,"right",true],[9045,"right",false],[9135,"right",true],[9351,"down",true],[9372,"up",false],[9624,"up",true],[9643,"down",false],[9936,"down",true],[9979,"up",false],[10171,"down",false],[10209,"up",true],[10701,"down",true],[10701,"up",false],[10737,"down",false],[10790,"up",true],[11818,"down",true],[11859,"up",false],[11995,"down",false],[12021,"up",true],[13329,"up",false],[13347,"down",true],[13421,"down",false],[13421,"up",true],[13533,"right",false],[13595,"right",true],[15621,"down",true],[18598,"down",false],[18616,"right",false],[18798,"right",true],[18900,"right",false],[18950,"right",true],[19026,"right",false],[19042,"right",true],[19143,"right",false],[19183,"right",true],[19276,"right",false],[19329,"right",true],[19418,"right",false],[19493,"right",true],[19558,"right",false],[19745,"right",true],[19844,"right",false],[19943,"right",true],[20021,"right",false],[20228,"right",true],[20323,"right",false],[20392,"right",true],[20481,"right",false],[20523,"right",true],[20594,"right",false],[21049,"right",true],[21138,"right",false],[21378,"right",true],[21700,"right",false],[21773,"right",true]];
   const ANCHOR = "for(;t.userControls.buffer.length>0&&t.userControls.buffer[0].frame<=t.frames;){";
+  const blockSubmit = () => true;
+  // Never submit TAS runs to the online leaderboard: a POST to vps.kodub.com/.../leaderboard fails
+  // as if offline (the game shows "Failed to connect to server"). Downloading leaderboards still works.
+  const isSubmit = (m, u) => /^post$/i.test(m || "") && /^https:\/\/vps\.kodub\.com\/(.*\/)?leaderboard(\?|$)/.test(String(u));
+  const XO = XMLHttpRequest.prototype.open, XS = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function (m, u, ...r) { this.__tasSubmit = isSubmit(m, u); return XO.call(this, m, u, ...r); };
+  XMLHttpRequest.prototype.send = function (body) {
+    if (!this.__tasSubmit || !blockSubmit()) return XS.call(this, body);
+    console.log("[TAS] leaderboard submission blocked");
+    const x = this;
+    Object.defineProperty(x, "readyState", { value: 4 }); Object.defineProperty(x, "status", { value: 0 });
+    setTimeout(() => { const ev = new Event("readystatechange"); if (x.onreadystatechange) x.onreadystatechange.call(x, ev);
+      x.dispatchEvent(new Event("error")); x.dispatchEvent(new Event("loadend")); }, 0);
+  };
+  const realFetch = window.fetch;
+  window.fetch = function (input, init) {
+    const u = typeof input === "string" || input instanceof URL ? input : input && input.url;
+    const m = (init && init.method) || (input && input.method) || "GET";
+    if (isSubmit(m, u) && blockSubmit()) { console.log("[TAS] leaderboard submission blocked"); return Promise.reject(new TypeError("Failed to fetch")); }
+    return realFetch.apply(this, arguments);
+  };
+
   const RealWorker = window.Worker;
   window.Worker = function (url, opts) {
     const u = new URL(url, location.href);

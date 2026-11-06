@@ -1,6 +1,6 @@
-# PolyTrack Summer 1 TAS
+# PolyTrack TAS
 
-Tool-assisted runs of **Summer 1** in [PolyTrack](https://www.kodub.com/apps/polytrack) (game version 0.6.3).
+Tool-assisted runs of the official tracks of [PolyTrack](https://www.kodub.com/apps/polytrack) (game version 0.6.3): Summer 1–6, Winter 1–5 and Desert 1–5. Summer 1 first:
 
 | Run | Time | Files |
 |---|---|---|
@@ -18,7 +18,7 @@ You need a desktop browser (Chrome, Edge or Firefox) or Firefox for Android, and
    [Violentmonkey](https://violentmonkey.github.io/). In Chrome and Edge, also turn on
    **Allow user scripts** (or Developer mode) for the extension, or scripts won't run.
 2. **Install the script:** open
-   <https://raw.githubusercontent.com/wjairplane/summer1-tas/main/all-tracks.user.js>.
+   <https://raw.githubusercontent.com/wjairplane/polytrack-tas/main/all-tracks.user.js>.
    The manager shows an install page; click **Install**.
 3. **Open the game** at <https://app-polytrack.kodub.com/> (reload it if it was already open:
    the script must load before the game does).

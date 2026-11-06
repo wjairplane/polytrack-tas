@@ -20,8 +20,9 @@ You need a desktop browser (Chrome, Edge or Firefox) or Firefox for Android, and
 2. **Install the script:** open
    <https://raw.githubusercontent.com/wjairplane/polytrack-tas/main/all-tracks.user.js>.
    The manager shows an install page; click **Install**.
-3. **Open the game** at <https://app-polytrack.kodub.com/> (reload it if it was already open:
-   the script must load before the game does).
+3. **Open the game** at <https://www.kodub.com/apps/polytrack> (reload it if it was already open:
+   the script must load before the game does). The game runs in a frame from
+   `app-polytrack.kodub.com`, which is where the script runs; opening that address directly works too.
 4. **Pick a track:** a small dark menu appears at the top right. Choose the track in the list
    (each entry shows the TAS time).
 5. Go to the **track list** (the official tracks screen) and click **Start** in the menu. The script

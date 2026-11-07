@@ -57,6 +57,7 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
       return last !== null && last >= s0.ld - 1;
     };
     let s0 = null; s0 = await score(st);
+    if (A0 === START) lead = s0.ld;                             // a BASE run may already be ahead of REF
     while (hist.length && (s0.s < -100 || s0.off > OFFMAX)) {  // earlier changes don't hold up here: undo them one by one
       console.log(`win ${A0}: off the line (${s0.off?.toFixed(2)}), undoing a window`); ({ st, lead } = hist.pop());
       await s.setBase(H.toL(st), Math.max(T, TL) + 20, 50, A0 - 100); s0 = null; s0 = await score(st); } let cur = st, cs = s0, best = st, bs = s0; const t0 = Date.now(); let it = 0, rej = 0;

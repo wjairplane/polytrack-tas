@@ -27,7 +27,12 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
     if (bf < 0) return null; const seg = sub(rp(bf + 1), rp(bf)), l = nrm(seg) || 1e-9, t = Math.max(-1, Math.min(1, dot(sub(p, rp(bf)), seg) / (l * l)));
     return { f: bf + t, i: bf, off: Math.sqrt(Math.max(0, bd * bd - (t * l) ** 2)) };
   };
-  let st = H.toState(H.load(E.BASE || E.REF)), lead = 0;
+  const refSt = H.toState(Lr);
+  let st = H.toState(H.load(E.BASE || E.REF)), lead = 0, prev = null;
+  // the inputs after a window follow REF's, moved earlier by the current lead so they still fit the car's timing
+  const shifted = (c, from, ld) => { const d = Math.round(ld), o = {}; for (const k of keys) { const a = c[k].slice();
+    if (E.BASE) { if (d > 0) a.copyWithin(from, from + d); else if (d < 0) a.copyWithin(from - d, from); } else for (let f = from; f < a.length; f++) a[f] = refSt[k][Math.min(a.length - 1, Math.max(0, f + d))];
+    o[k] = a; } return o; };
   for (let A0 = START; A0 < END; A0 += STEP) {
     const A1 = A0 + WIN, T = Math.min(A1 + HOR, FIN - 150);
     const TL = Math.min(A1 + LONG, FIN - 150);
@@ -50,7 +55,11 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
         const L = locate([e.S[j + 1], e.S[j + 2], e.S[j + 3]], g); if (!L || L.off > LOFF) return false; g = Math.round(L.f) + 250; last = L.f - f; }
       return last !== null && last >= s0.ld - 1;
     };
-    let s0 = null; s0 = await score(st); let cur = st, cs = s0, best = st, bs = s0; const t0 = Date.now(); let it = 0, rej = 0;
+    let s0 = null; s0 = await score(st);
+    if (prev && (s0.s < -100 || s0.off > OFFMAX)) {           // the last window's change doesn't hold up here: undo it
+      console.log(`win ${A0}: off the line (${s0.off?.toFixed(2)}), undoing the previous window`); st = prev.st; lead = prev.lead;
+      await s.setBase(H.toL(st), Math.max(T, TL) + 20, 50, A0 - 100); s0 = null; s0 = await score(st); }
+    prev = null; let cur = st, cs = s0, best = st, bs = s0; const t0 = Date.now(); let it = 0, rej = 0;
     while (Date.now() - t0 < WT * 1000) {
       it++; const c = Object.assign({}, cur), n = 1 + (rnd() < 0.3);
       for (let m = 0; m < n; m++) {
@@ -66,7 +75,7 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
       const cs2 = await score(c), Tm = Math.max(0.02, 0.5 * (1 - (Date.now() - t0) / (WT * 1000)));
       if (cs2.s >= cs.s || rnd() < Math.exp((cs2.s - cs.s) / Tm)) { cur = c; cs = cs2; if (cs.s > bs.s + 0.01) { if (await holds(c)) { bs = cs; best = c; } else rej++; } }
     }
-    if (bs.s > s0.s) { st = best; lead = bs.ld; }
+    if (bs.s > s0.s) { prev = { st, lead }; st = Math.round(bs.ld) !== Math.round(lead) ? shifted(best, A1, bs.ld - (E.BASE ? lead : 0)) : best; lead = bs.ld; }
     console.log(`win ${A0}-${A1} @${T}: lead ${s0.ld?.toFixed(2)} -> ${bs.ld?.toFixed(2)} ms, off ${bs.off?.toFixed(2)}, speed ${bs.sp?.toFixed(2)}, score ${s0.s.toFixed(2)} -> ${bs.s.toFixed(2)} (${it} tries, ${rej} failed the long check)`);
     fs.writeFileSync(E.OUT, JSON.stringify(H.toEvents(H.toL(st))));
   }

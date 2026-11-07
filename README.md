@@ -100,7 +100,7 @@ Our own shortcut run (21.209 s) is kept as `desert1_opt_21209.json`, and the rou
 
 `desert1-humanlike.user.js` (input `inputs/tracks/desert1_humanlike.json`) takes the same shortcut with inputs that look
 like a person's: **21.034 s, 3/3 checkpoints** in the real game (headless), about 4.1 s faster than the best human run.
-It is a separate script; turn off `all-tracks.user.js` while using it. Like the others, it blocks the leaderboard upload.
+It is a separate script; turn off `all-tracks.user.js` while using it.
 
 - Up to 15 s the inputs are the 25.161 human run's, unchanged (`inputs/tracks/desert1_human.json`).
 - From 15 s on every key press and gap lasts at least 40 ms (shortest 43 ms), with at most 10 key changes per second.

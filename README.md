@@ -57,7 +57,7 @@ tool-assisted.
 
 | Track | Best human run | TAS |
 |---|---|---|
-| Summer 1 | 22.123 (Monstrosity) | 22.010 |
+| Summer 1 | 22.123 (Monstrosity) | 21.996 |
 | Summer 2 | 15.178 (SpeedySebas) | 15.152 |
 | Summer 3 | 20.276 (SpeedySebas) | 20.150 |
 | Summer 4 | 34.105 (youngfella) | 33.992 |
@@ -79,7 +79,8 @@ On most tracks the TAS inputs are faster leaderboard runs from 2026-11-06 (sever
 leaderboard). Our own runs are kept as `inputs/tracks/<track>_ours.json` (Summer 1: `inputs/summer1_ours.json`): Summer 1 22.064,
 Summer 2 15.176, Summer 3 20.263, Summer 4 34.102, Summer 5 49.789, Summer 6 37.035, Summer 7 31.141, Winter 2 26.829,
 Winter 3 34.347, Winter 4 19.310, Winter 5 18.321, Desert 2 28.256, Desert 3 20.166, Desert 4 21.717, Desert 5 29.018. Each
-started from a human replay of its time (`<track>_wr.json` or `<track>_human.json`). Winter 1 and Desert 1 use our runs.
+started from a human replay of its time (`<track>_wr.json` or `<track>_human.json`). Summer 1 (21.996, see below), Winter 1 and
+Desert 1 use our runs.
 
 Inputs used by the scripts are in `inputs/tracks/<track>_opt.json` (Summer 1: `inputs/summer1_opt.json`).
 Pipeline for a track: `node tools/capture_tracks.js` (track data + id, once), `python3 tools/fetch_replay.py 1
@@ -137,6 +138,7 @@ tools/fetch_sim_assets.sh      # -> sim_assets/ (not committed)
 | `tools/beam.js` | Beam search that grows lines forward in 5-25 ms action blocks, scored by projection onto the reference line. Options: `CONFIGS`, `BSTART`/`BSEED` (start from a frame / another run), `BACTIONS` (action set, incl. brake+steer), `BDEAD` (allow wide lines after a frame), `NFIN` (several finishing lines). |
 | `tools/finclimb.js` | Exact-finish search on the last seconds: maximizes how far the car is toward the finish on the frame before it finishes (sweeps plus simulated annealing, dense snapshots, optional `SHARE` dir for parallel runs). Found 22.066, 22.065 and 22.064. |
 | `tools/longrun.sh` | Endless finclimb slots that restart from, and promote gains to, a shared best run. |
+| `tools/leadsearch.js` | Windowed search for gains spread thinly over a run: anneals the inputs in one short window at a time (1 ms taps allowed) to be ahead of a reference line a little after the window, on the line and at its speed, then moves the later inputs earlier by the lead. Guards: `GCAP` (max lead gained per window), `OFFMAX`, `LONG`/`LOFF` (the car must stay on the line for `LONG` ms), and it undoes earlier windows when the car leaves the line. Options: `REF`, `BASE`, `START`, `END`, `WIN`, `STEP`, `HOR`, `WT`. Found Summer 1 21.996. |
 | `tools/fetch_replay.py` | Downloads a leaderboard recording and converts it to an input file. |
 
 ## How our Summer 1 time came down (22.114 → 22.064)
@@ -153,6 +155,24 @@ tools/fetch_sim_assets.sh      # -> sim_assets/ (not committed)
 
 All of the gain came after 10.7 s; the first 10.7 s are identical to the human run.
 
+## Summer 1 below 22 s (22.010 → 21.996)
+
+The 22.010 leaderboard run is on the same line as our 22.064 but gains a few ms per second between 5 and 14 s,
+with much finer steering (hundreds of 1–2 ms taps). Our searches had kept the first 10.7 s fixed and scored at the
+finish, where gains that small don't show. `tools/leadsearch.js` scores each short window by the lead a little
+after it instead. Starting from 22.010 (`inputs/summer1_opt_22010.json`), in four passes:
+
+| Part | Settings | Lead over 22.010 |
+|---|---|---|
+| 5–9.6 s | 500 ms windows, scored 0.7 s later | about 25 ms at 10.7 s |
+| Climbing spiral, 9.5–14.5 s | 1.5–2 s windows | about 26 ms at 15 s |
+| Big jump, 13.5–19 s | one 5.5 s window including S in the air, scored after the landing | about 9 ms at 19.7 s |
+| 19 s to the finish | 500 ms windows | 14 ms: **21.996** |
+
+The jump costs most of the lead: the earlier car lands worse, and scoring before the landing loses all of it. The
+21.996 run holds S from 15.58 s to 18.31 s without the short release 22.010 has at 16.7 s. `finclimb.js` on the
+last 2 s found no further frame. Verified in the real game (headless): **21.996 s, 3/3 checkpoints**.
+
 ## What we learned about Summer 1
 
 - **Physics:** Bullet raycast vehicle in wasm, deterministic, 1 ms steps. The car is
@@ -160,7 +180,7 @@ All of the gain came after 10.7 s; the first 10.7 s are identical to the human r
   so taps set an in-between angle; holding steer at speed makes the rear wheels slide and
   costs engine thrust.
 - **In the air** only S does anything (nose-up pitch); W, A and D are ignored. Holding S
-  through the big jump after checkpoint 3 is optimal.
+  through the big jump after checkpoint 3 is best; how the car lands decides most of what an earlier arrival gains.
 - **Wall-ride at checkpoint 1:** only one timing works (A at 4.059 s). Softer kerb hits,
   other approach angles and the old jump-over-the-ramp line all crash or lose time.
 - **Climbing spiral after checkpoint 2:** its brakes are required; beams with brake+steer
@@ -168,7 +188,7 @@ All of the gain came after 10.7 s; the first 10.7 s are identical to the human r
 - **Scoring traps:** checkpoint times and plane crossings reward lines that crash right
   after; short-horizon leads don't predict the finish. Score after a landing or at the finish.
 - **Route:** no shortcuts off the track; the finish line is already clipped as early as possible.
-- Sub-22.000 would need a different line in the first 10 s; none was found.
+- Sub-22.000 needed no new line: 21.996 is the same route with finer inputs between 5 and 19 s (see above).
 
 ## Other files
 

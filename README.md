@@ -101,6 +101,21 @@ It is a 20.626 s shortcut run (`inputs/tracks/desert1_base.json`) with the finis
 Our own shortcut run (21.209 s) is kept as `desert1_opt_21209.json`, and the route without the shortcut (25.243 s) as
 `desert1_opt_standard.json`. Details: `DESERT1_SHORTCUT.md`.
 
+### Human-like Desert 1 shortcut (21.034)
+
+`desert1-humanlike.user.js` (input `inputs/tracks/desert1_humanlike.json`) takes the same shortcut with inputs that look
+like a person's: **21.034 s, 3/3 checkpoints** in the real game (headless), about 4.1 s faster than the best human run.
+It is a separate script; turn off `all-tracks.user.js` while using it. Like the others, it blocks the leaderboard upload.
+
+- Up to 15 s the inputs are the 25.161 human run's, unchanged (`inputs/tracks/desert1_human.json`).
+- From 15 s on every key press and gap lasts at least 40 ms (shortest 43 ms), with at most 10 key changes per second.
+  The whole run has about 9 key changes per second; fast-tap TAS runs have 22–137 and hundreds of 1–2 ms taps.
+
+How it was found: `tools/humantrack.js` fitted 40 ms-minimum inputs to our 21.209 run's line from 15 s
+(`REF`, `BASE`, `START`, `MIN`, `WIN`), which held up to about 18.7 s; `tools/humanlike.js` then searched the rest
+(`E0`, `MIN`, `R`, `FX`) for progress along the shortcut path, pace, closeness to the path past the pillar and to the
+finish line, and once it finished, for finish time. Both take `TRACK=desert1` and use `tools/hlib.js`.
+
 ## Input format
 
 `inputs/*.json` is a list of `[frame_ms, key, pressed]` with keys `KeyW`, `KeyA`, `KeyS`, `KeyD`.

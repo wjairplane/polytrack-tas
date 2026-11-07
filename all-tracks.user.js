@@ -14,7 +14,6 @@
   const load = () => { try { return localStorage.getItem(KEY) || ""; } catch (e) { return ""; } };
   const save = v => { try { localStorage.setItem(KEY, v); } catch (e) {} };
   let selected = load(); if (selected && !TRACKS[selected]) selected = "";
-  let tasUsed = !!selected;           // sticky until reload: a TAS run may have played on this page
   const workers = [];
   const send = () => workers.forEach(w => w.postMessage({ __tasSel: selected }));
 
@@ -91,7 +90,7 @@
     const st = document.createElement("span");
     st.style.cssText = "opacity:.8;max-width:160px";
     const status = s => { st.textContent = s; };
-    sel.onchange = () => { selected = sel.value; save(selected); if (selected) tasUsed = true; send(); status(selected ? "selected" : "off"); };
+    sel.onchange = () => { selected = sel.value; save(selected); send(); status(selected ? "selected" : "off"); };
     go.onclick = () => start(status);
     // keep the game from treating clicks/keys in the menu as game input
     for (const ev of ["keydown", "keyup", "mousedown", "pointerdown", "touchstart"]) box.addEventListener(ev, e => e.stopPropagation());

@@ -28,7 +28,7 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
     return { f: bf + t, i: bf, off: Math.sqrt(Math.max(0, bd * bd - (t * l) ** 2)) };
   };
   const refSt = H.toState(Lr);
-  let st = H.toState(H.load(E.BASE || E.REF)), lead = 0, prev = null;
+  let st = H.toState(H.load(E.BASE || E.REF)), lead = 0; const hist = [];
   // the inputs after a window follow REF's, moved earlier by the current lead so they still fit the car's timing
   const shifted = (c, from, ld) => { const d = Math.round(ld), o = {}; for (const k of keys) { const a = c[k].slice();
     if (E.BASE) { if (d > 0) a.copyWithin(from, from + d); else if (d < 0) a.copyWithin(from - d, from); } else for (let f = from; f < a.length; f++) a[f] = refSt[k][Math.min(a.length - 1, Math.max(0, f + d))];
@@ -49,6 +49,7 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
       if (s0 && ld - s0.ld > GCAP) return { s: -1e6 };          // too good to be true: a line that fails later
       return { s: ld - DW * L.off ** 2 - QW * qa ** 2 - VW * ang(v, rv) ** 2 - KV * Math.max(0, -sp) - (L.off > OFFMAX ? 1e3 : 0), ld, off: L.off, sp };
     };
+    const commit = (c, ld) => Math.round(ld) !== Math.round(lead) ? shifted(c, A1, ld - (E.BASE ? lead : 0)) : c;
     const holds = async c => {                                   // stays on the line until TL and keeps its lead
       const e = await s.evalFrom(H.toL(c), A0 - 1, TL + 1, 10); if (e.err) return false; let g = Math.round(A1 + s0.ld), last = null;
       for (let j = 0; j < e.S.length; j += 4) { const f = e.S[j]; if (f < A1 || (f - A1) % 250) continue;
@@ -56,10 +57,9 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
       return last !== null && last >= s0.ld - 1;
     };
     let s0 = null; s0 = await score(st);
-    if (prev && (s0.s < -100 || s0.off > OFFMAX)) {           // the last window's change doesn't hold up here: undo it
-      console.log(`win ${A0}: off the line (${s0.off?.toFixed(2)}), undoing the previous window`); st = prev.st; lead = prev.lead;
-      await s.setBase(H.toL(st), Math.max(T, TL) + 20, 50, A0 - 100); s0 = null; s0 = await score(st); }
-    prev = null; let cur = st, cs = s0, best = st, bs = s0; const t0 = Date.now(); let it = 0, rej = 0;
+    while (hist.length && (s0.s < -100 || s0.off > OFFMAX)) {  // earlier changes don't hold up here: undo them one by one
+      console.log(`win ${A0}: off the line (${s0.off?.toFixed(2)}), undoing a window`); ({ st, lead } = hist.pop());
+      await s.setBase(H.toL(st), Math.max(T, TL) + 20, 50, A0 - 100); s0 = null; s0 = await score(st); } let cur = st, cs = s0, best = st, bs = s0; const t0 = Date.now(); let it = 0, rej = 0;
     while (Date.now() - t0 < WT * 1000) {
       it++; const c = Object.assign({}, cur), n = 1 + (rnd() < 0.3);
       for (let m = 0; m < n; m++) {
@@ -73,9 +73,9 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
         if (k === 'up') a[0] = 1;
       }
       const cs2 = await score(c), Tm = Math.max(0.02, 0.5 * (1 - (Date.now() - t0) / (WT * 1000)));
-      if (cs2.s >= cs.s || rnd() < Math.exp((cs2.s - cs.s) / Tm)) { cur = c; cs = cs2; if (cs.s > bs.s + 0.01) { if (await holds(c)) { bs = cs; best = c; } else rej++; } }
+      if (cs2.s >= cs.s || rnd() < Math.exp((cs2.s - cs.s) / Tm)) { cur = c; cs = cs2; if (cs.s > bs.s + 0.01) { const cc = commit(c, cs.ld); if (await holds(cc)) { bs = cs; best = cc; } else rej++; } }
     }
-    if (bs.s > s0.s) { prev = { st, lead }; st = Math.round(bs.ld) !== Math.round(lead) ? shifted(best, A1, bs.ld - (E.BASE ? lead : 0)) : best; lead = bs.ld; }
+    if (bs.s > s0.s) { hist.push({ st, lead }); if (hist.length > 8) hist.shift(); st = best; lead = bs.ld; }
     console.log(`win ${A0}-${A1} @${T}: lead ${s0.ld?.toFixed(2)} -> ${bs.ld?.toFixed(2)} ms, off ${bs.off?.toFixed(2)}, speed ${bs.sp?.toFixed(2)}, score ${s0.s.toFixed(2)} -> ${bs.s.toFixed(2)} (${it} tries, ${rej} failed the long check)`);
     fs.writeFileSync(E.OUT, JSON.stringify(H.toEvents(H.toL(st))));
   }

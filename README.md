@@ -41,6 +41,16 @@ key changes until your keys match it ("Waiting: press D"); what you press while 
 following every change reproduces the run exactly (tested: Monstrosity's Summer 1 22.123 followed this way finished at
 22.123). Turn off the TAS scripts while using it.
 
+**Android app (`android/`):** PolyTrack in a full-screen WebView with any of these userscripts, plus auto-record.
+- **Install:** install the APK (build it with `android/gradlew.bat assembleDebug` in Android Studio, or use one shared with you).
+- **Script:** pick one with the **Script** button. It runs at page start like a userscript manager, and the app bundles every
+  `*.user.js` in this repo at build time.
+- **Rec:** tap **Rec**, allow screen capture, and every finished run is saved as an MP4 in **Movies/PolyTrack**, named after its
+  time. The app arms a clip when a race is on the grid, keeps it 1.5 s after the finish, and throws it away if you restart or
+  leave the race. Video only, no sound.
+- **Keys:** shows an on-screen W/A/S/D/T pad (T = try again) for scripts that need W to start, or for driving in slow motion.
+- Needs Android 10 or later and a current Android System WebView.
+
 **Notes**
 
 - The script applies the inputs on exact 1 ms physics frames by patching the game's physics worker

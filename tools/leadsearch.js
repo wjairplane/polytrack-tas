@@ -14,10 +14,12 @@ const DW = +(E.DW || 20), QW = +(E.QW || 0.05), VW = +(E.VW || 0.2), KV = +(E.KV
 const GCAP = +(E.GCAP || 3), OFFMAX = +(E.OFFMAX || 0.5), LONG = +(E.LONG || 2500), LOFF = +(E.LOFF || 1);
 // human-like limits: every press/gap the search makes lasts at least MIN ms; at most RATE key changes per second in a window
 const MIN = +(E.MIN || 0), RATE = +(E.RATE || 0);
+// SNAP: ms between heap snapshots (memory per process grows with the track's heap size / SNAP)
+const SNAP = +(E.SNAP || 50);
 let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 2147483648) / 2147483648, ri = n => Math.floor(rnd() * n);
 (async () => {
   const s = await H.createSim(); await s.initFast(); await s.raw({ op: 'wantQ', on: true });
-  const Lr = H.load(E.REF); await s.setBase(Lr, 30000, 500, 0); const ref = await s.evalFrom(Lr, 0, 30000, 1);
+  const Lr = H.load(E.REF); await s.setBase(Lr, H.N, H.N, 0); const ref = await s.evalFrom(Lr, 0, H.N, 1);
   const FIN = ref.frames, START = +(E.START || 3000), END = +(E.END || FIN - 300);
   const RP = new Float64Array(3 * FIN), RQ = new Float64Array(4 * FIN);
   for (let j = 0, f; j < ref.S.length; j += 4) { f = ref.S[j]; if (f >= FIN) break; for (let i = 0; i < 3; i++) RP[3 * f + i] = ref.S[j + 1 + i]; for (let i = 0; i < 4; i++) RQ[4 * f + i] = ref.SQ[j + i]; }
@@ -39,7 +41,7 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
   for (let A0 = START; A0 < END; A0 += STEP) {
     const A1 = A0 + WIN, T = Math.min(A1 + HOR, FIN - 150);
     const TL = Math.min(A1 + LONG, FIN - 150);
-    await s.setBase(H.toL(st), Math.max(T, TL) + 20, 50, A0 - 100);
+    await s.setBase(H.toL(st), Math.max(T, TL) + 20, SNAP, A0 - 100);
     const score = async c => {
       const e = await s.evalFrom(H.toL(c), A0 - 1, T + 1, 1); if (e.err) return { s: -1e9 };
       const at = f => { for (let j = 0; j < e.S.length; j += 4) if (e.S[j] === f) return j; return -1; };
@@ -68,7 +70,7 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
     if (A0 === START) lead = s0.ld;                             // a BASE run may already be ahead of REF
     while (hist.length && (s0.s < -100 || s0.off > OFFMAX)) {  // earlier changes don't hold up here: undo them one by one
       console.log(`win ${A0}: off the line (${s0.off?.toFixed(2)}), undoing a window`); ({ st, lead } = hist.pop());
-      await s.setBase(H.toL(st), Math.max(T, TL) + 20, 50, A0 - 100); s0 = null; s0 = await score(st); } let cur = st, cs = s0, best = st, bs = s0; const t0 = Date.now(); let it = 0, rej = 0;
+      await s.setBase(H.toL(st), Math.max(T, TL) + 20, SNAP, A0 - 100); s0 = null; s0 = await score(st); } let cur = st, cs = s0, best = st, bs = s0; const t0 = Date.now(); let it = 0, rej = 0;
     while (Date.now() - t0 < WT * 1000) {
       it++; const c = Object.assign({}, cur), n = 1 + (rnd() < 0.3);
       for (let m = 0; m < n; m++) {
@@ -89,7 +91,7 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
     console.log(`win ${A0}-${A1} @${T}: lead ${s0.ld?.toFixed(2)} -> ${bs.ld?.toFixed(2)} ms, off ${bs.off?.toFixed(2)}, speed ${bs.sp?.toFixed(2)}, score ${s0.s.toFixed(2)} -> ${bs.s.toFixed(2)} (${it} tries, ${rej} failed the long check)`);
     fs.writeFileSync(E.OUT, JSON.stringify(H.toEvents(H.toL(st))));
   }
-  const v = await s.run(H.encodeRecording(H.toL(st)), 30000);
+  const v = await s.run(H.encodeRecording(H.toL(st)), H.N);
   console.log('done, full run finishes at', v.frames, '(ref', FIN + ')');
   process.exit(0);
 })();

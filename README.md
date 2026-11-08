@@ -79,7 +79,7 @@ tool-assisted.
 | Winter 3 | 34.389 (SpeedySebas) | 34.219 |
 | Winter 4 | 19.311 (SpeedySebas) | 19.246 |
 | Winter 5 | 18.323 (SpeedySebas) | 18.148 |
-| Desert 1 | 25.161 (Monstrosity, no shortcut) | 20.622 (shortcut) |
+| Desert 1 | 25.161 (Monstrosity, no shortcut) | 20.546 (shortcut) |
 | Desert 2 | 28.271 (cheesebob (81)) | 28.062 |
 | Desert 3 | 20.302 (The Kroger) | 20.150 |
 | Desert 4 | 21.750 (Monstrosity) | 21.640 |
@@ -102,8 +102,11 @@ Rebuild the menu script with `node tools/build_menu_userscript.js` (it needs eve
 
 `desert1_opt.json` (and `desert1.user.js`, the Desert 1 entry of `all-tracks.user.js`) is the **shortcut run**: after the
 last checkpoint the car leaves the road, barrel-rolls through the gap between two pillars under the big red structure, is thrown
-up onto it and finishes from the top. Verified in the real game (headless): **20.622 s, 3/3 checkpoints**.
-It is a 20.626 s shortcut run (`inputs/tracks/desert1_base.json`) with the finish re-optimized by `tools/finclimb.js`. Same route as NeoRacer's video "How a TAS Completely Broke One of Polytrack's Most Famous Maps (Desert 1)".
+up onto it and finishes from the top. Verified in the real game (headless): **20.546 s, 3/3 checkpoints**.
+20.546 came from the 20.622 run (now `desert1_opt_20622.json`): `tools/leadsearch.js` found no gain before 12 s, gained
+4.6 ms by 17.9 s, which broke the shortcut; `tools/humanlike.js` with no input limits (`MIN=1 SMIN=1 RATE=1000`, `E0`
+16500, then 16000/17500 from its best) re-solved the shortcut from there: 20.548, then 20.546.
+The 20.622 run was a 20.626 s shortcut run (`inputs/tracks/desert1_base.json`) with the finish re-optimized by `tools/finclimb.js`. Same route as NeoRacer's video "How a TAS Completely Broke One of Polytrack's Most Famous Maps (Desert 1)".
 Our own shortcut run (21.209 s) is kept as `desert1_opt_21209.json`, and the route without the shortcut (25.243 s) as
 `desert1_opt_standard.json`. Details: `DESERT1_SHORTCUT.md`.
 

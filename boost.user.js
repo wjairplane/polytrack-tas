@@ -50,8 +50,9 @@
   // The car state counts its own physics steps (bytes 4-6, and the finish frame in bytes 12-14 once finished) and the
   // race timer shows that count, so after the extra steps both are set back to race frames: the timer stays at real
   // time while the car moves faster.
+  // The worker counts a tick's frames first and steps the cars afterwards, so the race frame is counted per step call.
   const BOOSTED = 'function n(e,r){for(let k=e.userControls?self.__boostSteps():1;k>0;k--)t.ccall("updateCarModel","void",["number","boolean","boolean","boolean","boolean","boolean","number"],[e.id,r.up,r.right,r.down,r.left,r.reset,i]);' +
-    'if(e.userControls){const H=t.HEAPU8,f=e.frames+1;H[i+4]=f&255;H[i+5]=f>>8&255;H[i+6]=f>>16&255;' +
+    'if(e.userControls){const H=t.HEAPU8,f=e.__rf=(e.__rf||0)+1;H[i+4]=f&255;H[i+5]=f>>8&255;H[i+6]=f>>16&255;' +
     'if(H[i+11]&2){const g=e.__fin||(e.__fin=f);H[i+12]=g&255;H[i+13]=g>>8&255;H[i+14]=g>>16&255}}';
 
   const RealWorker = window.Worker;

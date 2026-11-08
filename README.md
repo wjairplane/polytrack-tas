@@ -46,8 +46,8 @@ the left edge, remembered between visits). It steps your car's physics more ofte
 twice on every 5th frame), so speed, acceleration, steering and jumps all happen that much faster against the race timer;
 ghost cars are unchanged. The car's own step count (which the race timer shows) is set back to race frames after the
 extra steps, so the timer runs at real time. Checked in the offline simulator: holding W, the boosted car at race frame
-1000 is exactly where the normal car is at frame 1200 (1.2×) or 1300 (1.3×), and reports frame 1000. Boosted runs don't match normal physics, so the script blocks
-leaderboard uploads once a boost above 1× has been used on the page (until a reload at 1×), and the game's own replay of
+1000 is exactly where the normal car is at frame 1200 (1.2×) or 1300 (1.3×), and reports frame 1000. Boosted runs don't match normal physics: uploads aren't blocked,
+but the server's check replays runs at normal speed, so a boosted run likely won't verify, and the game's own replay of
 a boosted run plays at normal speed. Turn off the TAS scripts while using it.
 
 **Android app (`android/`):** PolyTrack in a full-screen WebView with any of these userscripts, plus auto-record.

@@ -75,17 +75,18 @@ class MainActivity : Activity() {
         val root = FrameLayout(this)
         root.addView(web, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
-        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(8, 8, 8, 8) }
+        // a column at the middle of the right edge: the userscript menu takes the top right, the game uses the corners
+        val bar = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.END; setPadding(8, 8, 8, 8) }
         scriptButton = smallButton("Script") { pickScript() }
         recButton = smallButton("Rec: off") { toggleRecording() }
         val keysButton = smallButton("Keys") { pad.visibility = if (pad.visibility == View.VISIBLE) View.GONE else View.VISIBLE; prefs.edit().putBoolean("keys", pad.visibility == View.VISIBLE).apply() }
         status = TextView(this).apply { setTextColor(Color.WHITE); textSize = 12f; setPadding(12, 0, 12, 0); setShadowLayer(3f, 0f, 0f, Color.BLACK) }
         listOf(scriptButton, recButton, keysButton, status).forEach { bar.addView(it) }
-        root.addView(bar, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.END))
+        root.addView(bar, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER_VERTICAL or Gravity.END))
 
         pad = keyPad()
         pad.visibility = if (prefs.getBoolean("keys", false)) View.VISIBLE else View.GONE
-        root.addView(pad, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM or Gravity.END).apply { setMargins(0, 0, 24, 24) })
+        root.addView(pad, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM or Gravity.END).apply { setMargins(0, 0, 24, (72 * resources.displayMetrics.density).toInt()) })
 
         setContentView(root)
         hideSystemBars()
@@ -215,7 +216,7 @@ class MainActivity : Activity() {
         text = label; isAllCaps = false; textSize = 12f; setTextColor(Color.WHITE); minHeight = 0; minimumHeight = 0
         setPadding(24, 8, 24, 8)
         background = GradientDrawable().apply { cornerRadius = 16f; setColor(Color.argb(200, 20, 24, 60)) }
-        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { setMargins(6, 0, 6, 0) }
+        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 6, 0, 6) }
         setOnClickListener { onClick() }
     }
 

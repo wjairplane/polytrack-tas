@@ -60,7 +60,10 @@
   }
   let ghost = null;                                  // { name, time, keys: {W,A,S,D: toggle frames} }
   const held = (l, f) => { let lo = 0, hi = l.length; while (lo < hi) { const m = lo + hi >> 1; if (l[m] <= f) lo = m + 1; else hi = m; } return lo % 2 === 1; };
-  const raceMs = () => { const el = document.querySelector(".timer-ui > .center"); const m = el && el.innerText.replace(/\s/g, "").match(/(\d+):(\d\d)\.(\d{3})/); return m ? (+m[1] * 60 + +m[2]) * 1000 + +m[3] : 0; };
+  // the Current box shows the last checkpoint's split before the running time (and keeps it after a restart),
+  // so the running time is the last one in it
+  const raceMs = () => { const el = document.querySelector(".timer-ui > .center"); const all = el ? [...el.innerText.replace(/\s/g, "").matchAll(/(\d+):(\d\d)\.(\d{3})/g)] : [];
+    const m = all[all.length - 1]; return m ? (+m[1] * 60 + +m[2]) * 1000 + +m[3] : 0; };
 
   function overlay() {
     const o = document.createElement("div");
@@ -150,6 +153,6 @@
     document.body.appendChild(box);
     overlay();
   }
-  window.__slowmo = { set: v => { speed = v; send(); }, get: () => speed };
+  window.__slowmo = { set: v => { speed = v; send(); }, get: () => speed, raceMs: () => raceMs() };
   if (document.body) panel(); else addEventListener("DOMContentLoaded", panel);
 })();

@@ -41,6 +41,14 @@ key changes until your keys match it ("Waiting: press D"); what you press while 
 following every change reproduces the run exactly (tested: Monstrosity's Summer 1 22.123 followed this way finished at
 22.123). Turn off the TAS scripts while using it.
 
+**Car boost:** `boost.user.js` makes your car faster by a chosen rate (1.1×, 1.2×, 1.3×, 1.5× or 2×, in a small panel on
+the left edge, remembered between visits). It steps your car's physics more often than once per 1 ms race frame (at 1.2×,
+twice on every 5th frame), so speed, acceleration, steering and jumps all happen that much faster against the race timer;
+ghost cars are unchanged. Checked in the offline simulator: holding W, the boosted car at race frame 1000 is exactly where
+the normal car is at frame 1200 (1.2×) or 1300 (1.3×). Boosted runs don't match normal physics, so the script blocks
+leaderboard uploads once a boost above 1× has been used on the page (until a reload at 1×), and the game's own replay of
+a boosted run plays at normal speed. Turn off the TAS scripts while using it.
+
 **Android app (`android/`):** PolyTrack in a full-screen WebView with any of these userscripts, plus auto-record.
 - **Install:** install the APK (build it with `android/gradlew.bat assembleDebug` in Android Studio, or use one shared with you).
 - **Script:** pick one with the **Script** button. It runs at page start like a userscript manager, and the app bundles every

@@ -11,7 +11,9 @@ const FIN=ref.frames;console.log('ref',ref.fin,FIN);
 const RP=f=>ref.S.slice(4*f+1,4*f+4),RQ=f=>ref.SQ.slice(4*f,4*f+4);
 let st=H.toState(H.load(process.env.BASE||process.env.REF));
 const valid=(arr,lo,hi,k)=>{const mn=kmin(k);for(const [a,b] of H.runs(arr)){if(b<=lo)continue;if(a>=hi)break;if(a===0||b>=FIN-5)continue;if(b-a<mn)return false}return true};
-const adOk=(c,lo,hi)=>{if(!NOAD)return true;const a=c.left,d=c.right;for(let f=Math.max(0,lo);f<Math.min(hi,a.length);f++)if(a[f]&&d[f])return false;return true};
+// ADMAX: with NOAD, A and D may still overlap for up to ADMAX ms at a time (rolling from one key to the other)
+const ADMAX=+(process.env.ADMAX||0);
+const adOk=(c,lo,hi)=>{if(!NOAD)return true;const a=c.left,d=c.right;let n=0;for(let f=Math.max(0,lo-ADMAX);f<Math.min(hi+ADMAX,a.length);f++){if(a[f]&&d[f]){if(++n>ADMAX)return false}else n=0}return true};
 const fixWin=(lo,hi)=>{for(const k of keys){for(let g=0;g<200;g++){let bad=null;for(const [a,b,v] of H.runs(st[k])){if(b<=lo)continue;if(a>=hi)break;if(a===0||b>=FIN-5)continue;if(b-a<kmin(k)){bad=[a,b,v];break}}
   if(!bad)break;const [a,b,v]=bad;const o=k==='left'?st.right:k==='right'?st.left:null;
   if(v===1){if(NOAD&&o&&o.subarray(a,a+kmin(k)).some(x=>x))st[k].fill(0,a,b);else st[k].fill(1,a,a+kmin(k))}else if(NOAD&&o&&o.subarray(a,b).some(x=>x))st[k].fill(0,b,Math.min(H.N,a+kmin(k)));else st[k].fill(1,a,b)}}};

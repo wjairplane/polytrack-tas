@@ -1,6 +1,7 @@
 // Captures, for each official track, what the offline simulator needs (the physics worker's track
 // message: track data + mountain mesh) and the track's leaderboard id, by driving the real game menu.
 // usage: node tools/capture_tracks.js [outDir=sim_assets/tracks] [track names...]  (needs playwright)
+//   TAB="Community tracks" node tools/capture_tracks.js sim_assets/tracks "La Infinita"  for a community track
 const { chromium } = require('playwright'); const fs = require('fs'), path = require('path');
 const OUT = process.argv[2] || 'sim_assets/tracks';
 const NAMES = process.argv.slice(3).length ? process.argv.slice(3)
@@ -34,11 +35,15 @@ const slug = n => n.toLowerCase().replace(/\s+/g, '');
     // back to the track list (from a race: Exit; from a track panel: Back)
     for (const t of ['Exit', 'Back']) { const x = p.locator('button:visible').filter({ hasText: new RegExp('^\\s*' + t + '\\s*$') }); if (await x.count() && await x.first().isVisible()) { await x.first().click(); await p.waitForTimeout(1500); break; } }
     lastTrackId = null; await p.waitForTimeout(1000);
+    // TAB="Community tracks" (or another tab of the track list) for tracks outside the official list
+    if (process.env.TAB) { await p.locator('button:visible').filter({ hasText: new RegExp('^\\s*' + process.env.TAB + '\\s*$') }).first().click(); await p.waitForTimeout(3000); }
     if (process.env.DEBUG) console.log(JSON.stringify((await p.locator('button:visible').allInnerTexts()).map(s => s.replace(/\s+/g, ' ').trim())));
     const btn = p.locator('button:visible').filter({ hasText: new RegExp('^\\s*' + name + '(\\s|No|$)') }).first();
     await btn.click(); await p.waitForTimeout(2500);
     const n0 = created.length;
-    await p.locator('button:visible').filter({ hasText: /^\s*Play\s*$/ }).first().click(); await p.waitForTimeout(4000);
+    // click Play from the page itself: on community tracks an overlay can sit over it while the track loads
+    for (let w = 0; w < 20; w++) { if (await p.evaluate(() => { const b = [...document.querySelectorAll('button')].find(x => x.offsetParent && /^\s*Play\s*$/.test(x.innerText)); if (b) b.click(); return !!b; })) break; await p.waitForTimeout(500); }
+    for (let w = 0; w < 40 && (created.length === n0 || !lastTrackId); w++) await p.waitForTimeout(500);   // community tracks download first
     if (created.length === n0 || !lastTrackId) { console.log(`${name}: FAILED (track msg ${created.length - n0}, id ${lastTrackId})`); continue; }
     const msg = JSON.parse(created[created.length - 1]);
     fs.writeFileSync(path.join(OUT, slug(name) + '.json'), JSON.stringify({ name, trackId: lastTrackId, create: msg }));

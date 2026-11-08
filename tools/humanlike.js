@@ -5,10 +5,10 @@ const H=require('./hlib.js');const fs=H.fs;
 const MIN=+(process.env.MIN||40),R=+(process.env.R||6),E0=+(process.env.E0||16000),RATE=+(process.env.RATE||10),SH=+(process.env.SH||150),CAP=+(process.env.CAP||24000);
 const FX=(process.env.FX||'20,50,40').split(',').map(Number),FW=+(process.env.FW||30),PW=+(process.env.PW||20),LW=+(process.env.LW||0.5),OUT=process.env.OUT,MINUTES=+(process.env.MINUTES||60);let rs=+(process.env.SEED||1);const rnd=()=>{rs=(rs*1103515245+12345)%2147483648;return rs/2147483648};const ri=n=>Math.floor(rnd()*n);
 const keys=['up','right','down','left'];
-// SMIN: shortest W/S press or gap; NOAD=1: never A and D together (people rarely do either)
-const SMIN=+(process.env.SMIN||process.env.MIN||40),NOAD=process.env.NOAD==='1';
+// SMIN: shortest W/S press or gap; NOAD=1: never A and D together (people rarely do either), except up to ADMAX ms
+const SMIN=+(process.env.SMIN||process.env.MIN||40),NOAD=process.env.NOAD==='1',ADMAX=+(process.env.ADMAX||0);
 const segsOk=st=>{let tg=0;for(const k of keys){for(const [a,b] of H.runs(st[k].subarray(0,CAP))){if(b<=E0)continue;if(a>=E0)tg++;if(b>=CAP-1)continue;if(b-a<(k==='up'||k==='down'?SMIN:MIN))return false}}
- if(NOAD){const l=st.left,r=st.right;for(let f=E0;f<CAP;f++)if(l[f]&&r[f])return false}return tg<=RATE*(CAP-E0)/1000};
+ if(NOAD){const l=st.left,r=st.right;let n=0;for(let f=E0;f<CAP;f++){if(l[f]&&r[f]){if(++n>ADMAX)return false}else n=0}}return tg<=RATE*(CAP-E0)/1000};
 (async()=>{const s=await H.createSim();await s.initFast();
 const Lt=H.load(require('path').join(__dirname,'../inputs/tracks/desert1_opt_21209.json'));
 await s.setBase(Lt,22000,500,0);const ref=await s.evalFrom(Lt,0,22000,10);

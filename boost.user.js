@@ -8,36 +8,14 @@
 // and this script steps it more often (at 1.2x, twice on every 5th frame), so everything about the car (speed,
 // acceleration, steering, jumps) happens that much faster, while the race timer keeps counting real race frames.
 // Ghost cars are not changed.
-// Such runs don't match the game's normal physics, so leaderboard uploads are blocked once a boost above 1x has been
-// used on the page (until a reload with 1x), and the game's own replay of a boosted run plays at normal speed.
+// The game's own replay of a boosted run plays at normal speed.
 // A small panel at the left edge picks the rate (remembered between visits). Turn off the TAS scripts while using it.
 (() => {
   const RATES = [1, 1.1, 1.2, 1.3, 1.5, 2], KEY = "boostRate";
   let rate = 1;
   try { const v = +localStorage.getItem(KEY); if (RATES.includes(v)) rate = v; } catch (e) {}
-  let used = rate > 1;
   const workers = [];
   const send = () => workers.forEach(w => w.postMessage({ __boost: rate }));
-
-  // block leaderboard uploads after a boosted run may have happened on this page
-  const isSubmit = (m, u) => /^post$/i.test(m || "") && /^https:\/\/vps\.kodub\.com\/(.*\/)?leaderboard(\?|$)/.test(String(u));
-  const XO = XMLHttpRequest.prototype.open, XS = XMLHttpRequest.prototype.send;
-  XMLHttpRequest.prototype.open = function (m, u, ...r) { this.__boostSubmit = isSubmit(m, u); return XO.call(this, m, u, ...r); };
-  XMLHttpRequest.prototype.send = function (body) {
-    if (!this.__boostSubmit || !used) return XS.call(this, body);
-    console.log("[boost] leaderboard submission blocked");
-    const x = this;
-    Object.defineProperty(x, "readyState", { value: 4 }); Object.defineProperty(x, "status", { value: 0 });
-    setTimeout(() => { if (x.onreadystatechange) x.onreadystatechange.call(x, new Event("readystatechange"));
-      x.dispatchEvent(new Event("error")); x.dispatchEvent(new Event("loadend")); }, 0);
-  };
-  const realFetch = window.fetch;
-  window.fetch = function (input, init) {
-    const u = typeof input === "string" || input instanceof URL ? input : input && input.url;
-    const m = (init && init.method) || (input && input.method) || "GET";
-    if (isSubmit(m, u) && used) { console.log("[boost] leaderboard submission blocked"); return Promise.reject(new TypeError("Failed to fetch")); }
-    return realFetch.apply(this, arguments);
-  };
 
   // inside the worker: how many physics steps your car gets this frame (rate 1.2 -> 1,1,1,1,2,...)
   const steps = `(()=>{let k=${rate},acc=0;self.__boostSteps=()=>{acc+=k;const c=Math.floor(acc+1e-9);acc-=c;return c};
@@ -86,7 +64,7 @@
       const b = document.createElement("button");
       b.textContent = v + "×";
       b.style.cssText = "font:bold 12px sans-serif;cursor:pointer;padding:2px 6px";
-      b.onclick = () => { rate = v; if (v > 1) used = true; try { localStorage.setItem(KEY, String(v)); } catch (e) {} send(); mark(); b.blur(); };
+      b.onclick = () => { rate = v; try { localStorage.setItem(KEY, String(v)); } catch (e) {} send(); mark(); b.blur(); };
       box.appendChild(b);
       return [v, b];
     });
@@ -95,6 +73,6 @@
     for (const ev of ["keydown", "keyup", "mousedown", "pointerdown", "touchstart"]) box.addEventListener(ev, e => e.stopPropagation());
     document.body.appendChild(box);
   }
-  window.__boost = { set: v => { rate = v; if (v > 1) used = true; send(); }, get: () => rate };
+  window.__boost = { set: v => { rate = v; send(); }, get: () => rate };
   if (document.body) panel(); else addEventListener("DOMContentLoaded", panel);
 })();

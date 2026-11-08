@@ -34,7 +34,7 @@ for(let A0=START;A0<FIN;A0+=WIN){const A1=Math.min(A0+WIN,FIN),T1=Math.min(A1+HO
   for(let m=0;m<nm;m++){const k=keys[Math.floor(rnd()*4)];c[k]=c[k].slice();const arr=c[k];const r=rnd();
    const rr=H.runs(arr).filter(([a,b])=>b>E0&&a<A1&&a>0);
    if(r<0.6&&rr.length){const [a,b,v]=rr[Math.floor(rnd()*rr.length)];const d=(rnd()<0.5?-1:1)*(1+Math.floor(rnd()*(rnd()<0.7?15:80)));
-     if(rnd()<0.5){const na=Math.max(E0,a+d);if(d>0)arr.fill(1-v,a,Math.min(na,b));else arr.fill(v,na,a)}else{const nb=Math.min(A1,b+d);if(d>0)arr.fill(v,b,nb);else arr.fill(1-v,Math.max(nb,a),b)}}
+     if(rnd()<0.5&&a>=E0){const na=Math.max(E0,a+d);if(d>0)arr.fill(1-v,a,Math.min(na,b));else arr.fill(v,na,a)}else{const nb=Math.min(A1,b+d);if(d>0)arr.fill(v,b,nb);else arr.fill(1-v,Math.max(nb,a,E0),b)}}
    else if(r<0.75&&rr.length){const [a,b,v]=rr[Math.floor(rnd()*rr.length)];if(a>=E0)arr.fill(1-v,a,b)}
    else{const a=E0+Math.floor(rnd()*(A1-E0));const d=kmin(k)+Math.floor(rnd()*200);arr.fill(1-arr[a],a,Math.min(a+d,A1))}
    if(!valid(arr,E0-SMIN,A1+SMIN,k))ok=false}

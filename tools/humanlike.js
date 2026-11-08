@@ -5,7 +5,10 @@ const H=require('./hlib.js');const fs=H.fs;
 const MIN=+(process.env.MIN||40),R=+(process.env.R||6),E0=+(process.env.E0||16000),RATE=+(process.env.RATE||10),SH=+(process.env.SH||150),CAP=+(process.env.CAP||24000);
 const FX=(process.env.FX||'20,50,40').split(',').map(Number),FW=+(process.env.FW||30),PW=+(process.env.PW||20),LW=+(process.env.LW||0.5),OUT=process.env.OUT,MINUTES=+(process.env.MINUTES||60);let rs=+(process.env.SEED||1);const rnd=()=>{rs=(rs*1103515245+12345)%2147483648;return rs/2147483648};const ri=n=>Math.floor(rnd()*n);
 const keys=['up','right','down','left'];
-const segsOk=st=>{let tg=0;for(const k of keys){for(const [a,b] of H.runs(st[k].subarray(0,CAP))){if(b<=E0)continue;if(a>=E0)tg++;if(b>=CAP-1)continue;if(b-a<MIN)return false}}return tg<=RATE*(CAP-E0)/1000};
+// SMIN: shortest W/S press or gap; NOAD=1: never A and D together (people rarely do either)
+const SMIN=+(process.env.SMIN||process.env.MIN||40),NOAD=process.env.NOAD==='1';
+const segsOk=st=>{let tg=0;for(const k of keys){for(const [a,b] of H.runs(st[k].subarray(0,CAP))){if(b<=E0)continue;if(a>=E0)tg++;if(b>=CAP-1)continue;if(b-a<(k==='up'||k==='down'?SMIN:MIN))return false}}
+ if(NOAD){const l=st.left,r=st.right;for(let f=E0;f<CAP;f++)if(l[f]&&r[f])return false}return tg<=RATE*(CAP-E0)/1000};
 (async()=>{const s=await H.createSim();await s.initFast();
 const Lt=H.load(require('path').join(__dirname,'../inputs/tracks/desert1_opt_21209.json'));
 await s.setBase(Lt,22000,500,0);const ref=await s.evalFrom(Lt,0,22000,10);
@@ -37,7 +40,7 @@ while(Date.now()-t0<MINUTES*60000){it++;const c={};for(const k of keys)c[k]=cur[
  for(let m=0;m<nm;m++){const k=keys[ri(4)];c[k]=c[k].slice();const arr=c[k];const rr=H.runs(arr.subarray(0,CAP)).filter(([a,b])=>a>=E0+MIN);const r=rnd();
   if(r<0.65&&rr.length){const [a,b,v]=rr[ri(rr.length)];const d=(rnd()<0.5?-1:1)*(1+ri(rnd()<0.75?4:40));if(d>0)arr.fill(1-v,a,Math.min(a+d,CAP));else arr.fill(v,Math.max(E0,a+d),a)}
   else if(r<0.78&&rr.length){const [a,b,v]=rr[ri(rr.length)];arr.fill(1-v,a,b)}
-  else{const a=E0+ri(CAP-E0-300);const d=MIN+ri(300);arr.fill(1-arr[a],a,Math.min(a+d,CAP))}}
+  else{const a=E0+ri(CAP-E0-300);const d=(k==='up'||k==='down'?SMIN:MIN)+ri(300);arr.fill(1-arr[a],a,Math.min(a+d,CAP))}}
  if(!segsOk(c))continue;
  const sc=await score(c);const T=Math.max(0.5,20*(1-(Date.now()-t0)/(MINUTES*60000)));
  if(sc.s>=cs.s||rnd()<Math.exp((sc.s-cs.s)/T)){cur=c;cs=sc;if(sc.s>bs.s){bs=sc;best=c;fs.writeFileSync(OUT,JSON.stringify(H.toEvents(H.toL(best))));console.log(`[${((Date.now()-t0)/1000)|0}s it ${it}]`,JSON.stringify(bs))}}

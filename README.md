@@ -34,7 +34,9 @@ rest. Install only one TAS script at a time (turn the others off), or they get i
 **Slow motion:** `slowmo.user.js` slows the game's physics clock so you can drive in slow motion with your own keys
 (1×, 0.5×, 0.25×, 0.1× or 0.05×, set in a small panel on the left edge and remembered between visits). Every key press
 still lands on the physics frame it was made on, the race timer shows game time, and a replay plays back at normal
-speed. Turn off the TAS scripts while using it.
+speed. To copy a leaderboard run, pick the track in the panel, click **Load** and pick a run from its top 50: its W/A/S/D
+light up in the middle of the screen as that run held them at the race timer's time, with a strip of its next second
+of inputs (the white line is now). Turn off the TAS scripts while using it.
 
 **Notes**
 

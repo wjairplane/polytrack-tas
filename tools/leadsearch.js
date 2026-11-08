@@ -4,7 +4,7 @@
 // Gains are small and spread out (a few ms per second), which a finish-time search can't see.
 // env: TRACK, REF (line to measure lead against), BASE (start inputs, default REF), OUT, START, END,
 //      WIN (window ms), STEP, HOR, WT (seconds per window), SEED, DW, QW, VW, KV (score weights), GCAP, OFFMAX, LONG, LOFF,
-//      MIN, RATE (human-like limits)
+//      MIN, RATE (human-like limits), KEEPLINE, ROFF, SNAP, SNAPMAX
 const H = require('./hlib.js'); const fs = H.fs;
 const E = process.env, keys = ['up', 'right', 'down', 'left'];
 const WIN = +(E.WIN || 500), STEP = +(E.STEP || 250), HOR = +(E.HOR || 700), WT = +(E.WT || 45);
@@ -14,12 +14,14 @@ const DW = +(E.DW || 20), QW = +(E.QW || 0.05), VW = +(E.VW || 0.2), KV = +(E.KV
 const GCAP = +(E.GCAP || 3), OFFMAX = +(E.OFFMAX || 0.5), LONG = +(E.LONG || 2500), LOFF = +(E.LOFF || 1);
 // human-like limits: every press/gap the search makes lasts at least MIN ms; at most RATE key changes per second in a window
 const MIN = +(E.MIN || 0), RATE = +(E.RATE || 0);
-// SNAP: ms between heap snapshots (memory per process grows with the track's heap size / SNAP)
-const SNAP = +(E.SNAP || 50);
+// KEEPLINE=0: allow a window to make the run leave REF's line earlier than before (later windows must then repair it)
+const KEEPLINE = E.KEEPLINE !== '0', ROFF = +(E.ROFF || 3);
+// SNAP: ms between heap snapshots, kept only around the window (at most SNAPMAX of them: each is the whole wasm heap)
+const SNAP = +(E.SNAP || 50), SNAPMAX = +(E.SNAPMAX || 24);
 let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 2147483648) / 2147483648, ri = n => Math.floor(rnd() * n);
 (async () => {
   const s = await H.createSim(); await s.initFast(); await s.raw({ op: 'wantQ', on: true });
-  const Lr = H.load(E.REF); await s.setBase(Lr, H.N, H.N, 0); const ref = await s.evalFrom(Lr, 0, H.N, 1);
+  const Lr = H.load(E.REF); await s.setBase(Lr, H.N, H.N, 0, 0, 0); const ref = await s.evalFrom(Lr, 0, H.N, 1);
   const FIN = ref.frames, START = +(E.START || 3000), END = +(E.END || FIN - 300);
   const RP = new Float64Array(3 * FIN), RQ = new Float64Array(4 * FIN);
   for (let j = 0, f; j < ref.S.length; j += 4) { f = ref.S[j]; if (f >= FIN) break; for (let i = 0; i < 3; i++) RP[3 * f + i] = ref.S[j + 1 + i]; for (let i = 0; i < 4; i++) RQ[4 * f + i] = ref.SQ[j + i]; }
@@ -41,9 +43,13 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
   for (let A0 = START; A0 < END; A0 += STEP) {
     const A1 = A0 + WIN, T = Math.min(A1 + HOR, FIN - 150);
     const TL = Math.min(A1 + LONG, FIN - 150);
-    await s.setBase(H.toL(st), Math.max(T, TL) + 20, SNAP, A0 - 100);
+    const SP = Math.max(SNAP, Math.ceil((WIN + 100) / SNAPMAX));
+    const base = () => s.setBase(H.toL(st), Math.max(T, TL) + 20, SP, A0 - 100, A1, 0);
+    await base();
+    // a try only differs from st inside the window: simulate it from the snapshot just before its first change
+    const from = c => { for (let f = A0; f < A1; f++) for (const k of keys) if (c[k][f] !== st[k][f]) return f - 1; return A0 - 1; };
     const score = async c => {
-      const e = await s.evalFrom(H.toL(c), A0 - 1, T + 1, 1); if (e.err) return { s: -1e9 };
+      const e = await s.evalFrom(H.toL(c), from(c), T + 1, T % 10 ? 1 : 10); if (e.err) return { s: -1e9 };
       const at = f => { for (let j = 0; j < e.S.length; j += 4) if (e.S[j] === f) return j; return -1; };
       const j = at(T), j0 = at(T - 10); if (j < 0 || j0 < 0) return { s: -1e9 };
       const p = [e.S[j + 1], e.S[j + 2], e.S[j + 3]], v = sub(p, [e.S[j0 + 1], e.S[j0 + 2], e.S[j0 + 3]]);
@@ -54,9 +60,11 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
       if (s0 && ld - s0.ld > GCAP) return { s: -1e6 };          // too good to be true: a line that fails later
       return { s: ld - DW * L.off ** 2 - QW * qa ** 2 - VW * ang(v, rv) ** 2 - KV * Math.max(0, -sp) - (L.off > OFFMAX ? 1e3 : 0), ld, off: L.off, sp };
     };
-    const commit = (c, ld) => Math.round(ld) !== Math.round(lead) ? shifted(c, A1, ld - (E.BASE ? lead : 0)) : c;
+    const commit = (c, ld) => {
+      for (const k of keys) for (let f = 0; f < A0; f++) if (c[k][f] !== st[k][f]) throw new Error(`window ${A0}: ${k} changed at ${f}, before the window`);
+      return Math.round(ld) !== Math.round(lead) ? shifted(c, A1, ld - (E.BASE ? lead : 0)) : c; };
     const holds = async c => {                                   // stays on the line until TL and keeps its lead
-      const e = await s.evalFrom(H.toL(c), A0 - 1, TL + 1, 10); if (e.err) return false; let g = Math.round(A1 + s0.ld), last = null;
+      const e = await s.evalFrom(H.toL(c), from(c), TL + 1, 10); if (e.err) return false; let g = Math.round(A1 + s0.ld), last = null;
       for (let j = 0; j < e.S.length; j += 4) { const f = e.S[j]; if (f < A1 || (f - A1) % 250) continue;
         const L = locate([e.S[j + 1], e.S[j + 2], e.S[j + 3]], g); if (!L || L.off > LOFF) return false; g = Math.round(L.f) + 250; last = L.f - f; }
       return last !== null && last >= s0.ld - 1;
@@ -70,13 +78,21 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
     if (A0 === START) lead = s0.ld;                             // a BASE run may already be ahead of REF
     while (hist.length && (s0.s < -100 || s0.off > OFFMAX)) {  // earlier changes don't hold up here: undo them one by one
       console.log(`win ${A0}: off the line (${s0.off?.toFixed(2)}), undoing a window`); ({ st, lead } = hist.pop());
-      await s.setBase(H.toL(st), Math.max(T, TL) + 20, SNAP, A0 - 100); s0 = null; s0 = await score(st); } let cur = st, cs = s0, best = st, bs = s0; const t0 = Date.now(); let it = 0, rej = 0;
+      await base(); s0 = null; s0 = await score(st); }
+    // how far the whole run stays within ROFF of REF's line (REF's finish frame if all the way)
+    const reach = async c => { const e = await s.evalFrom(H.toL(c), A0 - 1, FIN + 500, 50); let g = A0 + lead;
+      for (let j = 0; j < e.S.length; j += 4) { const f = e.S[j]; if (f < A0) continue;
+        const L = locate([e.S[j + 1], e.S[j + 2], e.S[j + 3]], Math.round(Math.min(FIN - 3, g))); if (!L || L.off > ROFF) return f; g = L.f + 50; }
+      return e.fin ? FIN : e.frames; };
+    const r0 = await reach(st);
+    let cur = st, cs = s0, best = st, bs = s0; const t0 = Date.now(); let it = 0, rej = 0;
     while (Date.now() - t0 < WT * 1000) {
       it++; const c = Object.assign({}, cur), n = 1 + (rnd() < 0.3);
       for (let m = 0; m < n; m++) {
         const k = keys[ri(4)], a = (c[k] = c[k].slice()), r = rnd(), runs = H.runs(a).filter(([x, y]) => y > A0 && x < A1 && x > 0);
         if (r < 0.45 && runs.length) {                       // move one edge of a segment
-          const [x, y, v] = runs[ri(runs.length)], d = (rnd() < 0.5 ? -1 : 1) * (1 + ri(rnd() < 0.7 ? 4 : 20)), e = rnd() < 0.5 ? x : y;
+          const [x, y, v] = runs[ri(runs.length)], d = (rnd() < 0.5 ? -1 : 1) * (1 + ri(rnd() < 0.7 ? 4 : 20)), e = (y > A1 || (x >= A0 && rnd() < 0.5)) ? x : y;
+          if (e < A0 || e > A1) continue;   // an edge outside the window: moving it would flip everything up to it
           const ne = Math.max(A0, Math.min(A1, e + d)); if (e === x) { if (ne < e) a.fill(v, ne, e); else a.fill(1 - v, e, ne); } else { if (ne > e) a.fill(v, e, ne); else a.fill(1 - v, ne, e); }
         } else if (r < 0.75) { const f = A0 + ri(WIN), l = MIN ? MIN + ri(100) : 1 + ri(rnd() < 0.6 ? 3 : 25); a.fill(1 - a[f], f, Math.min(A1, f + l)); } // short tap / gap
         else if (r < 0.9 && runs.length) { const sh = runs.filter(([x, y]) => y - x <= 30 && x >= A0 && y <= A1); if (sh.length) { const [x, y, v] = sh[ri(sh.length)]; a.fill(1 - v, x, y); } } // remove a short segment
@@ -87,8 +103,11 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
       const cs2 = await score(c), Tm = Math.max(0.02, 0.5 * (1 - (Date.now() - t0) / (WT * 1000)));
       if (cs2.s >= cs.s || rnd() < Math.exp((cs2.s - cs.s) / Tm)) { cur = c; cs = cs2; if (cs.s > bs.s + 0.01) { const cc = commit(c, cs.ld); if ((!(MIN || RATE) || valid(cc)) && await holds(cc)) { bs = cs; best = cc; } else rej++; } }
     }
-    if (bs.s > s0.s) { hist.push({ st, lead }); if (hist.length > 8) hist.shift(); st = best; lead = bs.ld; }
-    console.log(`win ${A0}-${A1} @${T}: lead ${s0.ld?.toFixed(2)} -> ${bs.ld?.toFixed(2)} ms, off ${bs.off?.toFixed(2)}, speed ${bs.sp?.toFixed(2)}, score ${s0.s.toFixed(2)} -> ${bs.s.toFixed(2)} (${it} tries, ${rej} failed the long check)`);
+    let rb = r0;
+    if (bs.s > s0.s) { rb = await reach(best);
+      if (KEEPLINE && rb < Math.min(r0, FIN) - 250) { console.log(`win ${A0}: the change leaves the line at ${rb} (was ${r0}), not kept`); bs = s0; rb = r0; }
+      else { hist.push({ st, lead }); if (hist.length > 8) hist.shift(); st = best; lead = bs.ld; } }
+    console.log(`win ${A0}-${A1} @${T}: lead ${s0.ld?.toFixed(2)} -> ${bs.ld?.toFixed(2)} ms, off ${bs.off?.toFixed(2)}, speed ${bs.sp?.toFixed(2)}, score ${s0.s.toFixed(2)} -> ${bs.s.toFixed(2)} (${it} tries, ${rej} failed the long check), on the line to ${rb}`);
     fs.writeFileSync(E.OUT, JSON.stringify(H.toEvents(H.toL(st))));
   }
   const v = await s.run(H.encodeRecording(H.toL(st)), H.N);

@@ -3,7 +3,8 @@
 // HOR ms after the window, while staying on the line with REF's heading and at least REF's speed.
 // Gains are small and spread out (a few ms per second), which a finish-time search can't see.
 // env: TRACK, REF (line to measure lead against), BASE (start inputs, default REF), OUT, START, END,
-//      WIN (window ms), STEP, HOR, WT (seconds per window), SEED, DW, QW, VW, KV (score weights), GCAP, OFFMAX, LONG, LOFF
+//      WIN (window ms), STEP, HOR, WT (seconds per window), SEED, DW, QW, VW, KV (score weights), GCAP, OFFMAX, LONG, LOFF,
+//      MIN, RATE (human-like limits)
 const H = require('./hlib.js'); const fs = H.fs;
 const E = process.env, keys = ['up', 'right', 'down', 'left'];
 const WIN = +(E.WIN || 500), STEP = +(E.STEP || 250), HOR = +(E.HOR || 700), WT = +(E.WT || 45);
@@ -11,6 +12,8 @@ const DW = +(E.DW || 20), QW = +(E.QW || 0.05), VW = +(E.VW || 0.2), KV = +(E.KV
 // guards against short-horizon traps: max lead gained per window (ms), max distance off the line at the scoring
 // point, and a longer check that the car stays on the line (LOFF) for LONG ms after the window without losing lead
 const GCAP = +(E.GCAP || 3), OFFMAX = +(E.OFFMAX || 0.5), LONG = +(E.LONG || 2500), LOFF = +(E.LOFF || 1);
+// human-like limits: every press/gap the search makes lasts at least MIN ms; at most RATE key changes per second in a window
+const MIN = +(E.MIN || 0), RATE = +(E.RATE || 0);
 let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 2147483648) / 2147483648, ri = n => Math.floor(rnd() * n);
 (async () => {
   const s = await H.createSim(); await s.initFast(); await s.raw({ op: 'wantQ', on: true });
@@ -56,6 +59,11 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
         const L = locate([e.S[j + 1], e.S[j + 2], e.S[j + 3]], g); if (!L || L.off > LOFF) return false; g = Math.round(L.f) + 250; last = L.f - f; }
       return last !== null && last >= s0.ld - 1;
     };
+    const togs = c => { let n = 0; for (const k of keys) { const a = c[k]; for (let f = Math.max(1, A0); f < A1; f++) if (a[f] !== a[f - 1]) n++; } return n; };
+    const shortOk = new Set(); if (MIN) for (const k of keys) for (const [x, y] of H.runs(st[k])) if (y > A0 - MIN && x < A1 + MIN && y - x < MIN) shortOk.add(k + x + ',' + y);
+    const maxTog = RATE ? Math.max(togs(st), Math.floor(RATE * WIN / 1000)) : 1e9;
+    const valid = c => { if (MIN) for (const k of keys) for (const [x, y] of H.runs(c[k])) { if (y <= A0 - MIN) continue; if (x >= A1 + MIN) break;
+      if (x > 0 && y < FIN - 5 && y - x < MIN && !shortOk.has(k + x + ',' + y)) return false; } return togs(c) <= maxTog; };
     let s0 = null; s0 = await score(st);
     if (A0 === START) lead = s0.ld;                             // a BASE run may already be ahead of REF
     while (hist.length && (s0.s < -100 || s0.off > OFFMAX)) {  // earlier changes don't hold up here: undo them one by one
@@ -68,13 +76,14 @@ let rs = +(E.SEED || 1); const rnd = () => (rs = (rs * 1103515245 + 12345) % 214
         if (r < 0.45 && runs.length) {                       // move one edge of a segment
           const [x, y, v] = runs[ri(runs.length)], d = (rnd() < 0.5 ? -1 : 1) * (1 + ri(rnd() < 0.7 ? 4 : 20)), e = rnd() < 0.5 ? x : y;
           const ne = Math.max(A0, Math.min(A1, e + d)); if (e === x) { if (ne < e) a.fill(v, ne, e); else a.fill(1 - v, e, ne); } else { if (ne > e) a.fill(v, e, ne); else a.fill(1 - v, ne, e); }
-        } else if (r < 0.75) { const f = A0 + ri(WIN), l = 1 + ri(rnd() < 0.6 ? 3 : 25); a.fill(1 - a[f], f, Math.min(A1, f + l)); } // short tap / gap
+        } else if (r < 0.75) { const f = A0 + ri(WIN), l = MIN ? MIN + ri(100) : 1 + ri(rnd() < 0.6 ? 3 : 25); a.fill(1 - a[f], f, Math.min(A1, f + l)); } // short tap / gap
         else if (r < 0.9 && runs.length) { const sh = runs.filter(([x, y]) => y - x <= 30 && x >= A0 && y <= A1); if (sh.length) { const [x, y, v] = sh[ri(sh.length)]; a.fill(1 - v, x, y); } } // remove a short segment
         else { const f = A0 + ri(WIN), l = 10 + ri(80); a.fill(rnd() < 0.5 ? 1 : 0, f, Math.min(A1, f + l)); } // longer hold / release
         if (k === 'up') a[0] = 1;
       }
+      if ((MIN || RATE) && !valid(c)) continue;
       const cs2 = await score(c), Tm = Math.max(0.02, 0.5 * (1 - (Date.now() - t0) / (WT * 1000)));
-      if (cs2.s >= cs.s || rnd() < Math.exp((cs2.s - cs.s) / Tm)) { cur = c; cs = cs2; if (cs.s > bs.s + 0.01) { const cc = commit(c, cs.ld); if (await holds(cc)) { bs = cs; best = cc; } else rej++; } }
+      if (cs2.s >= cs.s || rnd() < Math.exp((cs2.s - cs.s) / Tm)) { cur = c; cs = cs2; if (cs.s > bs.s + 0.01) { const cc = commit(c, cs.ld); if ((!(MIN || RATE) || valid(cc)) && await holds(cc)) { bs = cs; best = cc; } else rej++; } }
     }
     if (bs.s > s0.s) { hist.push({ st, lead }); if (hist.length > 8) hist.shift(); st = best; lead = bs.ld; }
     console.log(`win ${A0}-${A1} @${T}: lead ${s0.ld?.toFixed(2)} -> ${bs.ld?.toFixed(2)} ms, off ${bs.off?.toFixed(2)}, speed ${bs.sp?.toFixed(2)}, score ${s0.s.toFixed(2)} -> ${bs.s.toFixed(2)} (${it} tries, ${rej} failed the long check)`);

@@ -10,7 +10,9 @@
 // frames, so it shows game time; a replay plays back at normal speed.
 // A small panel on the left edge sets the speed (remembered between visits). It can also show a leaderboard run's
 // inputs: pick the track, Load, pick a run; W/A/S/D light up in the middle of the screen as that run held them at the
-// race timer's time, with a strip of its next second of inputs. Turn off the TAS scripts while using it.
+// race timer's time, with a strip of its next second of inputs and the next key change. With "Wait for me" on, the race
+// pauses at each of that run's key changes until your keys match, and what you press while it waits lands on that frame,
+// so following it reproduces the run exactly. Turn off the TAS scripts while using it.
 (() => {
   const SPEEDS = [1, 0.5, 0.25, 0.1, 0.05], KEY = "slowmoSpeed";
   let speed = 1;
@@ -19,12 +21,24 @@
   const send = () => workers.forEach(w => w.postMessage({ __slowmo: speed }));
 
   // runs inside the worker before the game's code: performance.now() advances at `speed` x real time
+  // "Wait for me": before simulating a frame where the leaderboard run changes a key, the physics loop waits until the
+  // player's keys match the run's; presses made while it waits are moved onto that frame
   const clock = `(()=>{const P=self.performance,real=P.now.bind(P);let k=${speed},base=real(),off=base;
     P.now=()=>off+(real()-base)*k;
     const set=n=>{off=P.now();base=real();k=n};
-    self.addEventListener("message",e=>{if(e.data&&e.data.__slowmo!=null)set(e.data.__slowmo)});
+    let G=null;const held=(l,f)=>{let lo=0,hi=l.length;while(lo<hi){const m=lo+hi>>1;if(l[m]<=f)lo=m+1;else hi=m}return lo%2===1};
+    const ghost=g=>{if(!g){G=null;return}const t=new Set();let end=0;for(const x in g)for(const f of g[x]){t.add(f);end=Math.max(end,f+1)}G={k:g,t,end}};
+    self.__slowWaitAll=cars=>{if(!G)return false;const c=cars.find(c=>c.userControls&&c.hasStarted&&!c.isPaused&&c.frames<G.end);
+      if(!c||!G.t.has(c.frames))return false;const f=c.frames,b=c.userControls.buffer;let s=c.userControls;for(const x of b)if(x.frame<=f)s=x;
+      for(const x of ["up","right","down","left"])if(!!s[x]!==held(G.k[x],f)){for(const y of b)if(y.frame>f)y.frame=f;return true}return false};
+    const ours=d=>d&&(d.__slowmo!=null||"__slowmoGhost" in d);
+    self.addEventListener("message",e=>{if(!ours(e.data))return;if(e.data.__slowmo!=null)set(e.data.__slowmo);if("__slowmoGhost" in e.data)ghost(e.data.__slowmoGhost)});
     let h=null;Object.defineProperty(self,"onmessage",{configurable:true,get:()=>h,set(f){h=f;
-      self.addEventListener("message",e=>{if(!(e.data&&e.data.__slowmo!=null))f.call(self,e)})}})})();`;
+      self.addEventListener("message",e=>{if(!ours(e.data))f.call(self,e)})}})})();`;
+  const LOOP = "for(;o>.001;){o-=.001;for(const t of e){";
+  let waitOn = false;
+  try { waitOn = localStorage.getItem("slowmoWait") === "1"; } catch (e) {}
+  const sendGhost = () => workers.forEach(w => w.postMessage({ __slowmoGhost: waitOn && ghost ? { up: ghost.keys.W, right: ghost.keys.D, down: ghost.keys.S, left: ghost.keys.A } : null }));
 
   const RealWorker = window.Worker;
   window.Worker = function (url, opts) {
@@ -38,9 +52,13 @@
       `const o=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,x,...a){return o.call(this,m,R(x),...a)};` +
       `const f=self.fetch;self.fetch=(x,...a)=>f(R(x),...a);` +
       `const i=self.importScripts;self.importScripts=(...x)=>i(...x.map(R))})();`;
-    const w = new RealWorker(URL.createObjectURL(new Blob([shim + clock + xhr.responseText], { type: "text/javascript" })), opts);
+    let src = xhr.responseText;
+    if (src.includes(LOOP)) src = src.replace(LOOP, "for(;o>.001;){if(self.__slowWaitAll(e)){o=0;break}o-=.001;for(const t of e){");
+    else console.warn("[slowmo] game version changed; Wait for me won't work");
+    const w = new RealWorker(URL.createObjectURL(new Blob([shim + clock + src], { type: "text/javascript" })), opts);
     workers.push(w);
     console.log("[slowmo] physics worker patched, speed " + speed);
+    sendGhost();
     return w;
   };
 
@@ -82,13 +100,25 @@
     // timeline: 250 ms back to 1000 ms ahead; a bar where the run holds the key; the white line is now
     const BACK = 250, AHEAD = 1000, cv = document.createElement("canvas"); cv.width = 400; cv.height = 76;
     cv.style.cssText = "background:rgba(20,24,60,.7);border-radius:5px";
-    o.append(title, keys, cv); document.body.appendChild(o);
+    // the next key change: what to press or release, and how soon (in game time)
+    const hint = document.createElement("div");
+    hint.style.cssText = "background:rgba(20,24,60,.75);padding:3px 10px;border-radius:5px;font-size:15px";
+    o.append(title, hint, keys, cv); document.body.appendChild(o);
+    const NAMES = { W: "W", A: "A", S: "S", D: "D" };
+    const nextChange = f => { let nf = Infinity; for (const k of rows) { const l = ghost.keys[k]; let lo = 0, hi = l.length; while (lo < hi) { const m = lo + hi >> 1; if (l[m] < f) lo = m + 1; else hi = m; } if (lo < l.length) nf = Math.min(nf, l[lo]); }
+      if (nf === Infinity) return null; const ch = rows.filter(k => held(ghost.keys[k], nf) !== held(ghost.keys[k], nf - 1)).map(k => ({ k, down: held(ghost.keys[k], nf) })); return { nf, ch }; };
     const g = cv.getContext("2d"), rows = ["W", "A", "S", "D"], X = 22, PX = (cv.width - X - 4) / (BACK + AHEAD);
     const tick = () => {
       if (ghost) {
         o.style.display = "flex"; const f = raceMs();
         title.textContent = `${ghost.name}  ${ghost.time}`;
-        for (const k of rows) { const on = held(ghost.keys[k], f); cap[k].style.background = on ? "#ffd84a" : "rgba(20,24,60,.55)"; cap[k].style.color = on ? "#14183c" : "#fff"; }
+        const nx = nextChange(f), soon = nx && nx.nf - f <= 1;
+        for (const k of rows) { const on = held(ghost.keys[k], f); cap[k].style.background = on ? "#ffd84a" : "rgba(20,24,60,.55)"; cap[k].style.color = on ? "#14183c" : "#fff";
+          cap[k].style.borderColor = nx && nx.ch.some(c => c.k === k) ? "#ff6b57" : "rgba(255,255,255,.7)"; }
+        if (!nx) { hint.textContent = "end of the run"; hint.style.background = "rgba(20,24,60,.75)"; }
+        else { const what = nx.ch.map(c => (c.down ? "press " : "release ") + NAMES[c.k]).join(" + ");
+          hint.textContent = soon && waitOn ? "Waiting: " + what : "Next: " + what + " in " + ((nx.nf - f) / 1000).toFixed(3) + " s";
+          hint.style.background = soon ? "rgba(226,72,58,.9)" : "rgba(20,24,60,.75)"; }
         g.clearRect(0, 0, cv.width, cv.height); g.font = "bold 12px sans-serif";
         rows.forEach((k, r) => {
           const y = 4 + r * 18; g.fillStyle = "#fff"; g.fillText(k, 6, y + 12); g.fillStyle = "#ffd84a";
@@ -140,14 +170,21 @@
     };
     runs.onchange = async () => {
       pick(runs); const o = runs.selectedOptions[0];
-      if (!o || !o.value) { ghost = null; msg.textContent = ""; return; }
+      if (!o || !o.value) { ghost = null; sendGhost(); msg.textContent = ""; return; }
       msg.textContent = "loading run…";
       try {
         const rec = (await get(`recordings?version=${VERSION}&ids=${o.value}`))[0].recording;
         ghost = { name: o.dataset.name, time: o.dataset.time, keys: await decode(rec) };
         msg.textContent = `showing ${o.dataset.name}`;
       } catch (e) { ghost = null; msg.textContent = "couldn't load that run (" + e.message + ")"; }
+      sendGhost();
     };
+    // Wait for me: the race pauses at each key change of the picked run until your keys match it
+    const wl = document.createElement("label"), wc = document.createElement("input");
+    wc.type = "checkbox"; wc.checked = waitOn; wl.style.cssText = "display:flex;gap:4px;align-items:center;cursor:pointer";
+    wl.append(wc, "Wait for me (pause at each key change)");
+    wc.onchange = () => { waitOn = wc.checked; try { localStorage.setItem("slowmoWait", waitOn ? "1" : "0"); } catch (e) {} sendGhost(); wc.blur(); };
+    row().append(wl);
     // keep the game from treating clicks/keys in the panel as game input
     for (const ev of ["keydown", "keyup", "mousedown", "pointerdown", "touchstart"]) box.addEventListener(ev, e => e.stopPropagation());
     document.body.appendChild(box);

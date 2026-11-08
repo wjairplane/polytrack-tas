@@ -36,7 +36,10 @@ rest. Install only one TAS script at a time (turn the others off), or they get i
 still lands on the physics frame it was made on, the race timer shows game time, and a replay plays back at normal
 speed. To copy a leaderboard run, pick the track in the panel, click **Load** and pick a run from its top 50: its W/A/S/D
 light up in the middle of the screen as that run held them at the race timer's time, with a strip of its next second
-of inputs (the white line is now). Turn off the TAS scripts while using it.
+of inputs (the white line is now) and the next key change. Tick **Wait for me** and the race pauses at each of that run's
+key changes until your keys match it ("Waiting: press D"); what you press while it waits lands on that physics frame, so
+following every change reproduces the run exactly (tested: Monstrosity's Summer 1 22.123 followed this way finished at
+22.123). Turn off the TAS scripts while using it.
 
 **Notes**
 

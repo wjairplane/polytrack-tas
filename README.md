@@ -1,7 +1,7 @@
 # PolyTrack TAS
 
 Tool-assisted runs of all 17 official tracks of [PolyTrack](https://www.kodub.com/apps/polytrack) (game version 0.6.3):
-Summer 1–7, Winter 1–5 and Desert 1–5, played in the real game by a userscript.
+Summer 1–7, Winter 1–5 and Desert 1–5, plus the community track La Infinita, played in the real game by a userscript.
 
 ## How to use
 
@@ -144,6 +144,19 @@ How it was found: `tools/humantrack.js` fitted 40 ms-minimum inputs to our 21.20
 (`E0`, `MIN`, `R`, `FX`) for progress along the shortcut path, pace, closeness to the path past the pillar and to the
 finish line, and once it finished, for finish time. Both take `TRACK=desert1` and use `tools/hlib.js`.
 
+## La Infinita (community track)
+
+**48.207**, verified in the real game (all 6 checkpoints): 103 ms faster than the 48.310 #1 run it started from, and
+98 ms faster than the leaderboard's best on 2026-11-08 (48.305). In `all-tracks.user.js` (Start opens the
+**Community tracks** tab) and `lainfinita.user.js`; inputs in `inputs/tracks/lainfinita_opt.json`, the #1 run in
+`lainfinita_wr.json`. Capture the track with `TAB="Community tracks" node tools/capture_tracks.js sim_assets/tracks "La Infinita"`
+and add `"tab": "Community tracks"` to its entry in `sim_assets/tracks/index.json` before rebuilding the menu.
+
+How it was found: `tools/leadsearch.js` on the #1 run in 500 ms windows, from 2 s to 30.5 s (`HN=52000` for the
+longer track). The car gained 76 ms by 16 s and 90 ms by 30.5 s, and the rest of the #1 run's inputs, moved earlier
+by that lead, still finish. The corner at 19 s is sensitive: an earlier version of the search lost inputs there and
+every run hit the wall, until that bug was fixed and each window checked that the whole run stays on the line.
+
 ## Input format
 
 `inputs/*.json` is a list of `[frame_ms, key, pressed]` with keys `KeyW`, `KeyA`, `KeyS`, `KeyD`.
@@ -170,7 +183,7 @@ tools/fetch_sim_assets.sh      # -> sim_assets/ (not committed)
 | `tools/beam.js` | Beam search that grows lines forward in 5-25 ms action blocks, scored by projection onto the reference line. Options: `CONFIGS`, `BSTART`/`BSEED` (start from a frame / another run), `BACTIONS` (action set, incl. brake+steer), `BDEAD` (allow wide lines after a frame), `NFIN` (several finishing lines). |
 | `tools/finclimb.js` | Exact-finish search on the last seconds: maximizes how far the car is toward the finish on the frame before it finishes (sweeps plus simulated annealing, dense snapshots, optional `SHARE` dir for parallel runs). Found 22.066, 22.065 and 22.064. |
 | `tools/longrun.sh` | Endless finclimb slots that restart from, and promote gains to, a shared best run. |
-| `tools/leadsearch.js` | Windowed search for gains spread thinly over a run: anneals the inputs in one short window at a time (1 ms taps allowed) to be ahead of a reference line a little after the window, on the line and at its speed, then moves the later inputs earlier by the lead. Guards: `GCAP` (max lead gained per window), `OFFMAX`, `LONG`/`LOFF` (the car must stay on the line for `LONG` ms), and it undoes earlier windows when the car leaves the line. Options: `REF`, `BASE`, `START`, `END`, `WIN`, `STEP`, `HOR`, `WT`. Found Summer 1 21.996. |
+| `tools/leadsearch.js` | Windowed search for gains spread thinly over a run: anneals the inputs in one short window at a time (1 ms taps allowed) to be ahead of a reference line a little after the window, on the line and at its speed, then moves the later inputs earlier by the lead. Guards: `GCAP` (max lead gained per window), `OFFMAX`, `LONG`/`LOFF` (the car must stay on the line for `LONG` ms), and it undoes earlier windows when the car leaves the line. Each window also checks how far the whole run stays on the line and refuses a change that leaves it earlier (`KEEPLINE`, `ROFF`). Options: `REF`, `BASE`, `START`, `END`, `WIN`, `STEP`, `HOR`, `WT`, `SNAP`/`SNAPMAX` (heap snapshots kept around the window). Found Summer 1 21.996 and La Infinita 48.207. |
 | `tools/fetch_replay.py` | Downloads a leaderboard recording and converts it to an input file. |
 
 ## How our Summer 1 time came down (22.114 → 22.064)

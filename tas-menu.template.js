@@ -58,7 +58,11 @@
     const name = TRACKS[selected].name;
     status("opening " + name);
     for (const t of [/^Exit$/, /^Back$/]) { const b = button(t); if (b) { b.click(); await sleep(1500); break; } }
-    const tb = button(new RegExp("^" + name + "(\\s|No|\\d|$)"));
+    const find = () => button(new RegExp("^" + name + "(\\s|No|\\d|$)"));
+    let tb = find();
+    // tracks outside the official list (TRACKS[..].tab, e.g. "Community tracks") are on another tab of the track list
+    const tab = TRACKS[selected].tab && button(new RegExp("^" + TRACKS[selected].tab + "$"));
+    if (!tb && tab) { tab.click(); for (let k = 0; k < 10 && !tb; k++) { await sleep(1000); tb = find(); } }
     if (!tb) { status("go to the track list first"); return; }
     tb.click(); await sleep(2000);
     const play = button(/^Play$/);

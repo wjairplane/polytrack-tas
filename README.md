@@ -31,6 +31,11 @@ Menu messages: *go to the track list first* (open the track list, then click Sta
 It has no menu: install it, open that track yourself and press W once to start; the TAS drives the
 rest. Install only one TAS script at a time (turn the others off), or they get in each other's way.
 
+**Slow motion:** `slowmo.user.js` slows the game's physics clock so you can drive in slow motion with your own keys
+(1×, 0.5×, 0.25×, 0.1× or 0.05×, set in a small panel on the left edge and remembered between visits). Every key press
+still lands on the physics frame it was made on, the race timer shows game time, and a replay plays back at normal
+speed. Turn off the TAS scripts while using it.
+
 **Notes**
 
 - The script applies the inputs on exact 1 ms physics frames by patching the game's physics worker

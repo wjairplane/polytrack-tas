@@ -86,7 +86,7 @@ tool-assisted.
 
 | Track | Best human run | TAS |
 |---|---|---|
-| Summer 1 | 22.123 (Monstrosity) | 21.996 |
+| Summer 1 | 22.123 (Monstrosity) | 21.823 |
 | Summer 2 | 15.178 (SpeedySebas) | 15.152 |
 | Summer 3 | 20.276 (SpeedySebas) | 20.150 |
 | Summer 4 | 34.105 (youngfella) | 33.992 |
@@ -108,7 +108,7 @@ On most tracks the TAS inputs are faster leaderboard runs from 2026-11-06 (sever
 leaderboard). Our own runs are kept as `inputs/tracks/<track>_ours.json` (Summer 1: `inputs/summer1_ours.json`): Summer 1 22.064,
 Summer 2 15.176, Summer 3 20.263, Summer 4 34.102, Summer 5 49.789, Summer 6 37.035, Summer 7 31.141, Winter 2 26.829,
 Winter 3 34.347, Winter 4 19.310, Winter 5 18.321, Desert 2 28.256, Desert 3 20.166, Desert 4 21.717, Desert 5 29.018. Each
-started from a human replay of its time (`<track>_wr.json` or `<track>_human.json`). Summer 1 (21.996, see below), Winter 1 and
+started from a human replay of its time (`<track>_wr.json` or `<track>_human.json`). Summer 1 (21.823, see below), Winter 1 and
 Desert 1 use our runs.
 
 Inputs used by the scripts are in `inputs/tracks/<track>_opt.json` (Summer 1: `inputs/summer1_opt.json`).
@@ -183,7 +183,7 @@ tools/fetch_sim_assets.sh      # -> sim_assets/ (not committed)
 | `tools/beam.js` | Beam search that grows lines forward in 5-25 ms action blocks, scored by projection onto the reference line. Options: `CONFIGS`, `BSTART`/`BSEED` (start from a frame / another run), `BACTIONS` (action set, incl. brake+steer), `BDEAD` (allow wide lines after a frame), `NFIN` (several finishing lines). |
 | `tools/finclimb.js` | Exact-finish search on the last seconds: maximizes how far the car is toward the finish on the frame before it finishes (sweeps plus simulated annealing, dense snapshots, optional `SHARE` dir for parallel runs). Found 22.066, 22.065 and 22.064. |
 | `tools/longrun.sh` | Endless finclimb slots that restart from, and promote gains to, a shared best run. |
-| `tools/leadsearch.js` | Windowed search for gains spread thinly over a run: anneals the inputs in one short window at a time (1 ms taps allowed) to be ahead of a reference line a little after the window, on the line and at its speed, then moves the later inputs earlier by the lead. Guards: `GCAP` (max lead gained per window), `OFFMAX`, `LONG`/`LOFF` (the car must stay on the line for `LONG` ms), and it undoes earlier windows when the car leaves the line. Each window also checks how far the whole run stays on the line and refuses a change that leaves it earlier (`KEEPLINE`, `ROFF`). Options: `REF`, `BASE`, `START`, `END`, `WIN`, `STEP`, `HOR`, `WT`, `SNAP`/`SNAPMAX` (heap snapshots kept around the window). Found Summer 1 21.996 and La Infinita 48.207. |
+| `tools/leadsearch.js` | Windowed search for gains spread thinly over a run: anneals the inputs in one short window at a time (1 ms taps allowed) to be ahead of a reference line a little after the window, on the line and at its speed, then moves the later inputs earlier by the lead. Guards: `GCAP` (max lead gained per window), `OFFMAX`, `LONG`/`LOFF` (the car must stay on the line for `LONG` ms), and it undoes earlier windows when the car leaves the line. Each window also checks how far the whole run stays on the line and refuses a change that leaves it earlier (`KEEPLINE`, `ROFF`). Options: `REF`, `BASE`, `START`, `END`, `WIN`, `STEP`, `HOR`, `WT`, `SNAP`/`SNAPMAX` (heap snapshots kept around the window). Found Summer 1 21.996 and 21.823, and La Infinita 48.207. |
 | `tools/fetch_replay.py` | Downloads a leaderboard recording and converts it to an input file. |
 
 ## How our Summer 1 time came down (22.114 → 22.064)
@@ -218,6 +218,21 @@ The jump costs most of the lead: the earlier car lands worse, and scoring before
 21.996 run holds S from 15.58 s to 18.31 s without the short release 22.010 has at 16.7 s. `finclimb.js` on the
 last 2 s found no further frame. Verified in the real game (headless): **21.996 s, 3/3 checkpoints**.
 
+## Summer 1: 21.823 (from the 21.824 leaderboard run)
+
+A tool-assisted run of 21.824 (320 key changes a second) went to #1 on the leaderboard on 2026-11-18. It is
+172 ms ahead of our 21.996 and its time comes from a different line, not finer inputs on ours: it takes the
+left turn at checkpoint 1 and the drop after it about 10 km/h faster (190 against 179 km/h at 4 s, 0.17 s ahead
+by 8 s), is quicker into the braking turn at 10–11 s and gives a little back at 12–13 s; through the big jump
+its line and speeds match ours. Our searches only make small changes around a run's line, so they never found it.
+
+Starting from that run (`inputs/summer1_top_21824.json`), 32 processes on a rented 32-core CPU pod ran 20 minutes
+of `tools/leadsearch.js` (whole run, 13 s per window) and `tools/finclimb.js`. Two lead searches reached
+**21.823**, both by reworking the inputs between 18.5 and 21 s (the landing after the big jump and the last
+turns); the finish polish found nothing. Verified in the real game (headless): **21.823 s, 3/3 checkpoints**.
+`inputs/summer1_opt.json` is 21.823; our own line's best is kept as `inputs/summer1_opt_21996.json` (21.995 was
+found later on it with the same tools on the pod, `tools/podrun.sh`).
+
 ## What we learned about Summer 1
 
 - **Physics:** Bullet raycast vehicle in wasm, deterministic, 1 ms steps. The car is
@@ -226,8 +241,9 @@ last 2 s found no further frame. Verified in the real game (headless): **21.996 
   costs engine thrust.
 - **In the air** only S does anything (nose-up pitch); W, A and D are ignored. Holding S
   through the big jump after checkpoint 3 is best; how the car lands decides most of what an earlier arrival gains.
-- **Wall-ride at checkpoint 1:** only one timing works (A at 4.059 s). Softer kerb hits,
-  other approach angles and the old jump-over-the-ramp line all crash or lose time.
+- **Wall-ride at checkpoint 1:** on our line only one timing works (A at 4.059 s); softer kerb hits
+  and the old jump-over-the-ramp line crash or lose time. The 21.824 run's faster line through this turn
+  (see above) shows a better approach exists than the ones our searches tried.
 - **Climbing spiral after checkpoint 2:** its brakes are required; beams with brake+steer
   actions found nothing faster.
 - **Scoring traps:** checkpoint times and plane crossings reward lines that crash right

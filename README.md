@@ -50,6 +50,25 @@ extra steps, so the timer runs at real time. Checked in the offline simulator: h
 but the server's check replays runs at normal speed, so a boosted run likely won't verify, and the game's own replay of
 a boosted run plays at normal speed. Turn off the TAS scripts while using it.
 
+**Realistic car physics:** `realism.user.js` makes your car drive like a real car of the class you pick in a small panel
+on the left edge (Game, Road, GT or Formula; remembered between visits). The game's car is a 400 kg Bullet raycast
+vehicle with a constant 4000 N engine force, no air drag and 10%/s velocity damping, so it reaches 185 km/h in 3 s and
+keeps accelerating past 330 km/h. After every 1 ms physics step the script edits the car's velocity in the physics
+engine's memory (found by the car's position; the velocity is 484 bytes after it): it caps forward acceleration at a
+traction limit and at engine power / speed, adds air drag (deceleration = k x speed^2, k set so drag and power balance
+at the class's top speed), undoes the damping, and in the air keeps only gravity (9.82 m/s^2; the game adds about
+0.8 m/s^2). Grip, braking and steering stay the game's. Checked in the offline simulator and the real game:
+
+| Class | Power | Traction limit | 0-100 km/h | Top speed | Fall in the air |
+|---|---|---|---|---|---|
+| Game | constant 4000 N | none | about 1.6 s | none (still accelerating at 330 km/h) | 12.3 m/s^2 at 15 m/s |
+| Road | 110 W/kg | 5 m/s^2 | about 4.5 s | about 210 km/h | 9.9 m/s^2 |
+| GT | 330 W/kg | 8 m/s^2 | about 3 s | about 280 km/h | 9.9 m/s^2 |
+| Formula | 900 W/kg | 11 m/s^2 | about 2.3 s | about 340 km/h | 9.9 m/s^2 |
+
+Like boost, runs with it don't match the game's physics, so they won't verify on the leaderboard and the game's own
+replay plays normal physics. Turn off the TAS and boost scripts while using it.
+
 **Android app (`android/`):** PolyTrack in a full-screen WebView with any of these userscripts, plus auto-record.
 - **Install:** install the APK (build it with `android/gradlew.bat assembleDebug` in Android Studio, or use one shared with you).
 - **Script:** pick one with the **Script** button. It runs at page start like a userscript manager, and the app bundles every
